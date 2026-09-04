@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- 已去 WinForms：托盘用 Win32 Shell_NotifyIconW，屏幕用 user32 EnumDisplayMonitors，MessageBox 用 WPF 原生。
+         显式 false 防止误引入 System.Windows.Forms.dll（节省体积/启动/内存）。 -->
+    <UseWindowsForms>false</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>MiniMonitor</AssemblyName>
+    <RootNamespace>MiniMonitor</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <DebugType>none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- WPF 依赖 manifest 中的 PerMonitorV2 -->
+    <TieredPGO>true</TieredPGO>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0</FileVersion>
+    <Company>MiniMonitor</Company>
+    <Product>MiniMonitor</Product>
+    <Description>极简桌面悬浮性能监控器</Description>
+    <!-- 运行时优化：桌面单进程用 WorkstationGC 省内存；并发 GC + 动态 PGO 提升启动 -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+    <RetainVM>false</RetainVM>
+    <!-- ThreadPool 避免桌面应用起过多线程 -->
+    <ThreadPoolMinThreads>1</ThreadPoolMinThreads>
+    <ThreadPoolMaxThreads>16</ThreadPoolMaxThreads>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="9.0.2" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.2" />
+    <!-- 去 WinForms 后显式引用（托盘图标 GDI 绘制）；体积远小于 WinForms 整套框架 -->
+    <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
+  </ItemGroup>
+
+</Project>

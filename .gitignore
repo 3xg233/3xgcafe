@@ -1,0 +1,56 @@
+# ============================================================
+# .NET build artifacts
+# ============================================================
+[Bb]in/
+[Oo]bj/
+[Dd]ist/
+[Dd]ist-[Pp]ortable/
+[Rr]elease/
+
+# ============================================================
+# Self-contained / portable builds are too large for git.
+# Each exe/zip exceeds GitHub's 100 MB file limit, so they
+# must go to GitHub Releases instead of being committed.
+# ============================================================
+*.exe
+*.zip
+
+# ============================================================
+# Visual Studio / IDE / user files
+# ============================================================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ============================================================
+# Logs & temporary artifacts (dev-only)
+# ============================================================
+*.log
+crash.log
+.tmp-*/
+
+# Verification screenshots
+.menu_verify.png
+desktop_layout.png
+
+# ============================================================
+# Web frontend (if the webpage is a build-based project)
+# ============================================================
+node_modules/
+dist-web/
+build/
+.cache/
+*.min.js
+
+# ============================================================
+# OS / editor junk
+# ============================================================
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# WorkBuddy project data (not source)
+# ============================================================
+.workbuddy/
