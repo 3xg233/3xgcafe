@@ -9,6 +9,8 @@
   - 用户说明：[MiniMonitor/README.md](MiniMonitor/README.md) ｜ 维护手册：[MiniMonitor/MAINTENANCE.md](MiniMonitor/MAINTENANCE.md)
 - **[SpotlightLauncher](SpotlightLauncher/)** —— 类 macOS 聚焦的启动器，支持应用检索与剪贴板历史。
   - 用户说明：[SpotlightLauncher/README.md](SpotlightLauncher/README.md) ｜ 维护手册：[SpotlightLauncher/MAINTENANCE.md](SpotlightLauncher/MAINTENANCE.md)
+- **[WallpaperPure](WallpaperPure/)** —— 一键隐藏/显示桌面图标的悬浮按钮（带淡入淡出过渡），方便纯净观赏壁纸。
+  - 用户说明：[WallpaperPure/README.md](WallpaperPure/README.md) ｜ 维护手册：[WallpaperPure/MAINTENANCE.md](WallpaperPure/MAINTENANCE.md)
 
 ## 网页工具（纯前端）
 - **[歌词写作工具 lyrics](lyrics/)** —— 面向音乐人的纯前端作词辅助工具（稳定版 + 实时协作 Beta 版）。
