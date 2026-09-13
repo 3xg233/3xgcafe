@@ -24,10 +24,40 @@ public partial class MainWindow : Window
 
     // ---------- 剪贴板历史 ----------
     private readonly ClipboardStore _clipStore = new();
+    // ---------- 自定义扫描路径 ----------
+    private readonly ScanPathsStore _scanPaths = new(); // UI 线程增删、立即落盘;索引器从磁盘读
+    private bool _pendingRebuild; // 索引未就绪时收到重建请求,首轮构建完成后补一次
+    private System.Windows.Threading.DispatcherTimer? _statusTimer;
     private bool _clipMode;      // false=软件查找，true=剪贴板历史
     private bool _clipReady;     // 历史已从磁盘加载
     private bool _altDown;       // Alt 防重复切换（按住不放不反复切）
     private System.Windows.Threading.DispatcherTimer? _clipDebounce;
+    private bool _pathsDialogOpen; // 对话框打开期间挂起自动隐藏
+    /// <summary>"失活时保持窗口"偏好（App 在启动与托盘切换时同步写入）。取消勾选瞬间若窗口已失活,补一次自动隐藏判定。</summary>
+    private bool _keepOnDeactivate;
+    // ---------- 供 3xgcafe Console 状态通道读取 ----------
+
+    /// <summary>应用索引是否已构建完成。</summary>
+    public bool IndexReady => _indexer.IsReady;
+
+    /// <summary>已索引的应用条目数。</summary>
+    public int IndexedCount => _indexer.Entries.Count;
+
+    /// <summary>剪贴板历史是否已加载完成。</summary>
+    public bool ClipboardReady => _clipReady;
+
+    /// <summary>剪贴板历史条数。</summary>
+    public int ClipboardCount => _clipStore.Search(null, ClipboardStore.MaxTotalItems).Count;
+
+    public bool KeepOnDeactivate
+    {
+        get => _keepOnDeactivate;
+        set
+        {
+            _keepOnDeactivate = value;
+            if (!value) EvaluateAutoHide();
+        }
+    }
     private ImageSource? _clipTextIcon;
     private readonly Dictionary<string, ImageSource> _thumbCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -38,17 +68,68 @@ public partial class MainWindow : Window
     private static readonly System.Windows.Media.Brush FgInactive = new SolidColorBrush(Color.FromRgb(0x6A, 0x6C, 0x76));
 
     /// <summary>调试/自动化测试用：--no-autohide 时失活不自动隐藏。</summary>
-    internal static bool NoAutoHide =
+    private static bool NoAutoHide =
         Environment.GetCommandLineArgs().Contains("--no-autohide", StringComparer.OrdinalIgnoreCase);
 
     private static readonly string FreqFile = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SpotlightLauncher", "freq.json");
+        "3xgcafe", "Spotlight", "freq.json");
+
+    private static readonly string WindowPosFile = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "3xgcafe", "Spotlight", "window.json");
+
+    /// <summary>标题行按住拖动窗口;结束后保存位置。</summary>
+    private void OnTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        try { DragMove(); }
+        catch (InvalidOperationException) { /* 鼠标状态异常时忽略 */ }
+        SaveWindowPos();
+    }
+
+    private void SaveWindowPos()
+    {
+        if (double.IsNaN(Left) || double.IsNaN(Top)) return; // 窗口从未显示过时不写 NaN
+        try
+        {
+            var dir = Path.GetDirectoryName(WindowPosFile);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(WindowPosFile, JsonSerializer.Serialize(new { Left, Top }));
+        }
+        catch { /* 写失败不影响使用 */ }
+    }
+
+    /// <summary>读档并校验窗口上边缘中点在任一屏幕内;有效则应用位置,无效返回 false 走默认定位。</summary>
+    private bool TryRestoreWindowPos()
+    {
+        try
+        {
+            if (!File.Exists(WindowPosFile)) return false;
+            using var doc = JsonDocument.Parse(File.ReadAllText(WindowPosFile));
+            if (doc.RootElement.TryGetProperty("Left", out var l)
+                && doc.RootElement.TryGetProperty("Top", out var t)
+                && l.ValueKind == System.Text.Json.JsonValueKind.Number
+                && t.ValueKind == System.Text.Json.JsonValueKind.Number)
+            {
+                double left = l.GetDouble(), top = t.GetDouble();
+                if (double.IsFinite(left) && double.IsFinite(top)
+                    && DisplayInfo.IsPointOnAnyScreen(left + Width / 2, top + 24))
+                {
+                    Left = left;
+                    Top = top;
+                    return true;
+                }
+            }
+        }
+        catch { /* 损坏则回退默认位置 */ }
+        return false;
+    }
 
     public MainWindow()
     {
         InitializeComponent();
         Height = 190; // 初始高度；结果增多后由代码自适应
+        _scanPaths.Load();
         UpdateModeTabs(); // 初始 = 软件模式激活
 
         // 后台建索引；完成后回到 UI 线程加载使用频率并刷新一次列表
@@ -59,6 +140,12 @@ public partial class MainWindow : Window
             {
                 LoadFrequency();
                 RefreshResults();
+                // 索引就绪前若收到过重建请求(如启动瞬间拖放添加),此刻补一次
+                if (_pendingRebuild)
+                {
+                    _pendingRebuild = false;
+                    RebuildIndex();
+                }
             });
         }, System.Threading.Tasks.TaskScheduler.Default);
     }
@@ -97,12 +184,16 @@ public partial class MainWindow : Window
         {
             _clipMode = false;
             ReindexButton.Visibility = Visibility.Visible;
+            AddPathButton.Visibility = Visibility.Visible;
             UpdateModeTabs();
         }
 
-        var wa = DisplayInfo.GetWorkAreaAtCursor();
-        Left = wa.Left + (wa.Width - Width) / 2;
-        Top = wa.Top + wa.Height * 0.22;
+        if (!TryRestoreWindowPos())
+        {
+            var wa = DisplayInfo.GetWorkAreaAtCursor();
+            Left = wa.Left + (wa.Width - Width) / 2;
+            Top = wa.Top + wa.Height * 0.22;
+        }
 
         SearchBox.Clear();
         RefreshResults();
@@ -134,17 +225,33 @@ public partial class MainWindow : Window
         }
     }
 
-    private void HideLauncher()
+    public void HideLauncher()
     {
         _hideTimer?.Stop();
+        SaveWindowPos();
         Hide();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        SaveWindowPos();
+        base.OnClosed(e);
     }
 
     private void OnWindowDeactivated(object sender, EventArgs e)
     {
         // 点击窗口外部时自动收起（Spotlight 行为）。
         // 加 500ms 防抖：短暂失活（如系统焦点抖动）不会误隐藏，恢复激活则取消。
-        if (!IsVisible || NoAutoHide) return;
+        EvaluateAutoHide();
+    }
+
+    /// <summary>判定并启动自动隐藏定时器（可见、无豁免、且当前未激活时）。</summary>
+    private void EvaluateAutoHide()
+    {
+        if (!IsVisible || NoAutoHide || KeepOnDeactivate) return;
+        if (_pathsDialogOpen) return; // 路径管理对话框打开期间不自动隐藏
+        if (IsActive) return; // 已激活则无需隐藏
+
         _hideTimer ??= new System.Windows.Threading.DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(500),
@@ -158,7 +265,13 @@ public partial class MainWindow : Window
     private void OnHideTick(object? sender, EventArgs e)
     {
         _hideTimer?.Stop();
-        if (IsVisible && !IsActive && !NoAutoHide)
+        // 鼠标左键按住（拖拽进行中）时不隐藏：重新起表延后判断，松开后再恢复原逻辑
+        if ((NativeMethods.GetAsyncKeyState(NativeMethods.VK_LBUTTON) & 0x8000) != 0)
+        {
+            _hideTimer?.Start();
+            return;
+        }
+        if (IsVisible && !IsActive && !NoAutoHide && !KeepOnDeactivate)
             Hide();
     }
 
@@ -171,12 +284,14 @@ public partial class MainWindow : Window
         if (_clipMode == clip) return;
         _clipMode = clip;
         ReindexButton.Visibility = clip ? Visibility.Collapsed : Visibility.Visible;
+        AddPathButton.Visibility = clip ? Visibility.Collapsed : Visibility.Visible;
         UpdateModeTabs();
         RefreshResults();
     }
 
     private void OnModeTabClick(object sender, MouseButtonEventArgs e)
     {
+        e.Handled = true; // 阻止冒泡到标题行触发窗口拖动
         if (sender is Border { Tag: string tag })
             SetMode(tag == "clip");
     }
@@ -226,11 +341,41 @@ public partial class MainWindow : Window
 
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e) => RefreshResults();
 
+    // ---------- 扫描路径管理对话框 ----------
+
+    private void OnAddPathClick(object sender, RoutedEventArgs e)
+    {
+        var dlg = new PathsDialog(_scanPaths) { Owner = this };
+        _pathsDialogOpen = true;
+        try
+        {
+            dlg.ShowDialog();
+        }
+        finally
+        {
+            _pathsDialogOpen = false;
+        }
+        if (dlg.Changed) RebuildIndex();
+        Activate();
+        FocusSearchBox();
+    }
+
     // ---------- 重新索引（手动刷新：扫描新安装的软件）----------
 
     private void OnReindexClick(object sender, RoutedEventArgs e)
     {
         if (!_indexer.IsReady || !ReindexButton.IsEnabled) return;
+        RebuildIndex();
+    }
+
+    /// <summary>重建索引（索引按钮 / 对话框关闭 / 拖放添加三处共用）。</summary>
+    private void RebuildIndex()
+    {
+        if (!_indexer.IsReady)
+        {
+            _pendingRebuild = true; // 首轮索引构建中:挂起,构建完成后补一次
+            return;
+        }
 
         ReindexButton.IsEnabled = false;
         ReindexLabel.Text = "索引中…";
@@ -247,6 +392,67 @@ public partial class MainWindow : Window
                 ReindexButton.ToolTip = "重新索引：扫描新安装的软件";
             });
         }, System.Threading.Tasks.TaskScheduler.Default);
+    }
+
+    /// <summary>底部状态条:显示 msg,2.5 秒后自动隐藏。</summary>
+    private void ShowStatus(string msg)
+    {
+        StatusText.Text = msg;
+        StatusBar.Visibility = Visibility.Visible;
+        _statusTimer?.Stop();
+        _statusTimer ??= new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(2500),
+        };
+        _statusTimer.Tick -= OnStatusTick;
+        _statusTimer.Tick += OnStatusTick;
+        _statusTimer.Start();
+    }
+
+    private void OnStatusTick(object? sender, EventArgs e)
+    {
+        _statusTimer?.Stop();
+        StatusBar.Visibility = Visibility.Collapsed;
+    }
+
+    // ---------- 拖放添加扫描路径 ----------
+
+    private void OnWindowDragOver(object sender, DragEventArgs e)
+    {
+        if (_clipMode) return; // 剪贴板模式不接收文件拖放（与"+"按钮隐藏一致）
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return; // 文本等拖放留给默认行为（搜索框）
+        e.Effects = e.Data.GetData(DataFormats.FileDrop) is string[] files
+                    && files.Any(ScanPathsStore.IsValidPath)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnWindowDrop(object sender, DragEventArgs e)
+    {
+        if (_clipMode || e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+
+        int added = 0, dup = 0, invalid = 0;
+        foreach (var f in files)
+        {
+            if (!ScanPathsStore.IsValidPath(f)) { invalid++; continue; }
+            if (_scanPaths.Add(f)) added++;
+            else dup++;
+        }
+        e.Handled = true;
+
+        if (added > 0)
+        {
+            RebuildIndex();
+            ShowStatus(dup > 0
+                ? $"已添加 {added} 个路径,忽略 {dup} 个重复 · 正在重建索引"
+                : $"已添加 {added} 个路径 · 正在重建索引");
+        }
+        else if (dup > 0) ShowStatus($"已忽略 {dup} 个重复路径");
+        else if (invalid > 0) ShowStatus("拖入的内容不是有效的 .exe 或文件夹");
+
+        // 拖放完成后带回前台:否则窗口仍失活,下一 tick 会立即隐藏,用户错过状态条反馈
+        Activate();
     }
 
     private void RefreshResults()
@@ -428,7 +634,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"复制失败：{ex.Message}", "SpotlightLauncher",
+            MessageBox.Show($"复制失败：{ex.Message}", "3xgcafe Spotlight",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -566,7 +772,7 @@ public partial class MainWindow : Window
             try { System.Windows.Clipboard.SetText(entry.TargetPath); }
             catch (Exception ex)
             {
-                MessageBox.Show($"复制路径失败：{ex.Message}", "SpotlightLauncher",
+                MessageBox.Show($"复制路径失败：{ex.Message}", "3xgcafe Spotlight",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -585,13 +791,13 @@ public partial class MainWindow : Window
             if (entry.IsUwp)
             {
                 MessageBox.Show("Microsoft Store 应用不支持以管理员身份运行。",
-                    "SpotlightLauncher", MessageBoxButton.OK, MessageBoxImage.Information);
+                    "3xgcafe Spotlight", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             if (string.IsNullOrEmpty(entry.TargetPath) || !File.Exists(entry.TargetPath))
             {
                 MessageBox.Show("找不到目标文件，无法启动。",
-                    "SpotlightLauncher", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "3xgcafe Spotlight", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             var psi = new ProcessStartInfo
@@ -615,7 +821,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"启动失败：{ex.Message}", "SpotlightLauncher",
+            MessageBox.Show($"启动失败：{ex.Message}", "3xgcafe Spotlight",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -627,13 +833,13 @@ public partial class MainWindow : Window
             if (entry.IsUwp)
             {
                 MessageBox.Show("Microsoft Store 应用没有可直接打开的文件位置。",
-                    "SpotlightLauncher", MessageBoxButton.OK, MessageBoxImage.Information);
+                    "3xgcafe Spotlight", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             if (string.IsNullOrEmpty(entry.TargetPath) || !File.Exists(entry.TargetPath))
             {
                 MessageBox.Show("找不到目标文件，无法打开所在位置。",
-                    "SpotlightLauncher", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "3xgcafe Spotlight", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             string folder = Path.GetDirectoryName(entry.TargetPath)!;
@@ -642,7 +848,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"打开位置失败：{ex.Message}", "SpotlightLauncher",
+            MessageBox.Show($"打开位置失败：{ex.Message}", "3xgcafe Spotlight",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -679,7 +885,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"启动失败：{ex.Message}", "SpotlightLauncher",
+            MessageBox.Show($"启动失败：{ex.Message}", "3xgcafe Spotlight",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }

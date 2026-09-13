@@ -14,24 +14,12 @@ public static class DisplayInfo
     private struct RECT { public int Left, Top, Right, Bottom; }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MONITORINFO
-    {
-        public uint cbSize;
-        public RECT rcMonitor;
-        public RECT rcWork;
-        public uint dwFlags;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     private struct POINT { public int X, Y; }
 
-    private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+    private const uint MONITOR_DEFAULTTONULL = 0x00000000;
 
     [DllImport("user32.dll")]
-    private static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern bool GetMonitorInfoW(IntPtr hMonitor, ref MONITORINFO lpmi);
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
     [DllImport("user32.dll")]
     private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip,
@@ -73,5 +61,14 @@ public static class DisplayInfo
         foreach (var r in AllScreenBounds())
             if (r.Contains(new Point(x, y))) return true;
         return false;
+    }
+
+    /// <summary>
+    /// 窗口是否与任一显示器有交集。用 MonitorFromWindow 由系统统一处理坐标系，
+    /// 避免 WPF 的 DIP 坐标与物理像素直接比较导致的误判（多屏 + 不同缩放时）。
+    /// </summary>
+    public static bool IsWindowOnAnyScreen(IntPtr hwnd)
+    {
+        return MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL) != IntPtr.Zero;
     }
 }

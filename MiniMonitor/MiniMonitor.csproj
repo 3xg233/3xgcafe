@@ -11,7 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>MiniMonitor</AssemblyName>
+    <AssemblyName>3xgcafe-Monitor</AssemblyName>
     <RootNamespace>MiniMonitor</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
@@ -21,11 +21,11 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <!-- WPF 依赖 manifest 中的 PerMonitorV2 -->
     <TieredPGO>true</TieredPGO>
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0</FileVersion>
-    <Company>MiniMonitor</Company>
-    <Product>MiniMonitor</Product>
-    <Description>极简桌面悬浮性能监控器</Description>
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0</FileVersion>
+    <Company>3xgcafe</Company>
+    <Product>3xgcafe Monitor</Product>
+    <Description>3xgcafe 系列 · 极简桌面悬浮性能监控器</Description>
     <!-- 运行时优化：桌面单进程用 WorkstationGC 省内存；并发 GC + 动态 PGO 提升启动 -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
@@ -35,6 +35,10 @@
     <!-- ThreadPool 避免桌面应用起过多线程 -->
     <ThreadPoolMinThreads>1</ThreadPoolMinThreads>
     <ThreadPoolMaxThreads>16</ThreadPoolMaxThreads>
+    <!-- 单文件打包：把 WPF 原生库（wpfgfx_cor3 等 5 个 DLL）打进 exe，首次运行时解压到
+         %TEMP%\.net\MiniMonitor 再加载。不设此项则这些 DLL 被排除在单文件外，
+         单独拷走 exe 会因 DllNotFoundException 闪退。 -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

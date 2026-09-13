@@ -1,7 +1,7 @@
 <Window x:Class="WallpaperPure.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="WallpaperPure"
+        Title="3xgcafe Wallpaper"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"

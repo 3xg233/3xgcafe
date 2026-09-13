@@ -1,4 +1,6 @@
-# WallpaperPure 维护手册
+# 3xgcafe Wallpaper 维护手册
+
+> 3xgcafe 系列工具之一 · 程序集名 `3xgcafe-Wallpaper`（原名 WallpaperPure）
 
 ## 技术要点
 
@@ -10,10 +12,25 @@
 - **交互（v1.1）**：原地左键单击 = 切换图标显隐；按住左键拖动 = 自由移动按钮（超过系统拖动阈值判定）。拖动结束自动钳回屏幕可视区并保存位置。
 - **按钮文案固定（v1.3）**：文本恒为"图标"，隐藏/显示状态仅靠颜色区分（灰=显示中，荧光黄 `#FFFAFC52`=已隐藏）。
 - **切换过渡动画（v1.3）**：对图标窗口临时加 `WS_EX_LAYERED`，150ms 内 10 步 alpha 渐变（隐藏=淡出后 `SW_HIDE`；显示=`SW_SHOW` 后淡入），结束立即移除 layered 样式恢复原状。动画期间忽略连点；程序退出时若动画未完成会先落最终状态再退出（`FinishFadeOnExit`）。仅点击瞬间运行（10 次轻量调用），平时零开销；找不到图标窗口时自动回退为无动画直切。
-- **开机自启（v1.4）**：托盘右键菜单"开机自启"勾选项，读写 `HKCU\...\Run\WallpaperPure`（值为带引号 exe 全路径，取 `Environment.ProcessPath`，单文件发布可用）。注册表为唯一状态源，无额外偏好文件；启动不自作主张改注册表。
-- **位置持久化**：`SettingsStore` 读写 `%APPDATA%\WallpaperPure\settings.json`（WPF 逻辑坐标）。启动时优先恢复保存位置（校验仍在虚拟屏幕内，防分辨率变更后丢失），否则用默认物理像素坐标 `(2300, 1270)` 经 `TransformFromDevice` 转换。
+- **开机自启（v1.4）**：托盘右键菜单"开机自启"勾选项，读写 `HKCU\...\Run\3xgcafe-Wallpaper`（值为带引号 exe 全路径，取 `Environment.ProcessPath`，单文件发布可用）。注册表为唯一状态源，无额外偏好文件；启动不自作主张改注册表。**每次读写都会顺带删除旧版本的值名 `WallpaperPure`**，避免新旧版本同时自启。
+- **位置持久化**：`SettingsStore` 读写 `%APPDATA%\3xgcafe\Wallpaper\settings.json`（WPF 逻辑坐标）。启动时优先恢复保存位置（校验仍在虚拟屏幕内，防分辨率变更后丢失），否则用默认物理像素坐标 `(2300, 1270)` 经 `TransformFromDevice` 转换。
 - **Z 序（v1.1）**：窗口非 Topmost、`ShowActivated=False` + `Focusable=False`——按钮只贴桌面层，不遮挡用户已打开的窗口、不抢焦点。
 - **无热键**：全部交互为左键单击/拖动 + 右键退出，托盘提供"开机自启 / 退出"。
+
+## 命名与隔离（v2.0）
+
+3xgcafe 系列统一命名后，本工具的对外标识与运行环境标识：
+
+| 项目 | 取值 |
+|------|------|
+| 显示名（窗口标题 / 托盘 / 文档） | `3xgcafe Wallpaper` |
+| 程序集 / exe 名 | `3xgcafe-Wallpaper`（`3xgcafe-Wallpaper.exe`） |
+| 注册表自启值名 | `3xgcafe-Wallpaper`（旧 `WallpaperPure` 自动清理） |
+| 数据目录 | `%APPDATA%\3xgcafe\Wallpaper\` |
+| IPC 通道名 | `3xgcafe-Wallpaper`（旧 `3xgcafe-WallpaperPure`） |
+| 工程目录 / 命名空间 | 保持 `WallpaperPure`（仅内部标识，不改） |
+
+> 这套隔离确保新版与旧版能在同一台机器共存而不互相干扰：进程名、自启项、数据目录、IPC 通道均不复用。
 
 ## 目录结构
 
@@ -24,7 +41,7 @@ WallpaperPure/
   App.xaml / App.xaml.cs  # 托盘菜单：开机自启勾选 + 退出
   MainWindow.xaml / MainWindow.xaml.cs
   AutoStart.cs            # 开机自启（HKCU Run）
-  SettingsStore.cs        # 位置持久化（%APPDATA%\WallpaperPure\settings.json）
+  SettingsStore.cs        # 位置持久化（%APPDATA%\3xgcafe\Wallpaper\settings.json）
   Native/
     NativeMethods.cs      # 图标窗口定位 + ShowWindow + 注册表 HideIcons + 分层动画原语
     TrayIcon.cs           # 无 WinForms 托盘
@@ -61,7 +78,7 @@ dotnet publish -c Release -r win-x64 --self-contained true \
 4. 窗口无标题栏，初始位置要用 `Width/Height` 定尺寸（`ActualWidth` 在 Show 前为 0）。
 5. 同文件若混用 `System.Drawing` 与 `System.Windows.Media`，Brush/Color 会歧义；GDI 全限定，WPF brush 用 `System.Windows.Media.Brush` 字段。
 6. 点击/拖动二义性：`DragMove()` 会阻塞至松开并吞掉期间的 `MouseLeftButtonUp`；用 `_isDragging` 标志区分，Up 事件里仅未拖动时才切换。
-7. 部署前须结束正在运行的实例（文件锁会让 `GenerateBundle` 报 "being used by another process"）；Git Bash 下 `taskkill //IM` 可能报"无效参数"，用 PowerShell `Stop-Process -Name WallpaperPure -Force`。
+7. 部署前须结束正在运行的实例（文件锁会让 `GenerateBundle` 报 "being used by another process"）；Git Bash 下 `taskkill //IM` 可能报"无效参数"，用 PowerShell `Stop-Process -Name 3xgcafe-Wallpaper -Force`。
 8. 过渡动画：对 Explorer 图标窗口临时加的 `WS_EX_LAYERED` 样式**必须在动画结束与程序退出两个路径都移除**，否则图标窗口会残留半透明状态；动画中的 alpha 已到 0 后还需 `SW_HIDE`（alpha=0 的窗口仍参与布局/命中）。
 9. `ShowWindow` 若同时需要 P/Invoke 的 `(IntPtr,int)` 与对外 `(IntPtr,bool)` 重载，P/Invoke 版保持 private，否则外部调用会命中 int 版导致 CS0122。
 10. **淡入失效坑（v1.3→v1.4 修复）**：显示路径必须先 `SW_SHOW` 再 `EnableLayered(alpha=0)` 逐帧升 alpha；反过来（先加 layered 置透明再 SW_SHOW）窗口以全透明快照显示，后续 alpha 更新不生效，表现为"无淡入、结束瞬间突然变亮"。淡出（窗口本已可见时加 layered）无此问题。

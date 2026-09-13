@@ -11,6 +11,10 @@
   - 用户说明：[SpotlightLauncher/README.md](SpotlightLauncher/README.md) ｜ 维护手册：[SpotlightLauncher/MAINTENANCE.md](SpotlightLauncher/MAINTENANCE.md)
 - **[WallpaperPure](WallpaperPure/)** —— 一键隐藏/显示桌面图标的悬浮按钮（带淡入淡出过渡），方便纯净观赏壁纸。
   - 用户说明：[WallpaperPure/README.md](WallpaperPure/README.md) ｜ 维护手册：[WallpaperPure/MAINTENANCE.md](WallpaperPure/MAINTENANCE.md)
+- **[ScreenGuard](ScreenGuard/)** —— 空闲自动锁定：无操作达到设定时长即全屏锁定，需密码解锁，期间封锁键鼠但不影响后台运行。
+  - 用户说明：[ScreenGuard/README.md](ScreenGuard/README.md) ｜ 维护手册：[ScreenGuard/MAINTENANCE.md](ScreenGuard/MAINTENANCE.md)
+- **[3xgcafeConsole](3xgcafeConsole/)** —— 统一管理面板：集中查看状态、启动/停止/重启以上工具，管理开机自启，并可通过状态通道下发指令。
+  - 用户说明：[3xgcafeConsole/README.md](3xgcafeConsole/README.md) ｜ 维护手册：[3xgcafeConsole/MAINTENANCE.md](3xgcafeConsole/MAINTENANCE.md)
 
 ## 网页工具（纯前端）
 - **[歌词写作工具 lyrics](lyrics/)** —— 面向音乐人的纯前端作词辅助工具（稳定版 + 实时协作 Beta 版）。

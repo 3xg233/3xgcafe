@@ -46,14 +46,6 @@ public static class DisplayInfo
     private static Rect ToRect(RECT r) =>
         new(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
 
-    /// <summary>鼠标当前位置（屏幕坐标）。</summary>
-    public static Point GetCursorPosition()
-    {
-        POINT p = default;
-        GetCursorPos(ref p);
-        return new Point(p.X, p.Y);
-    }
-
     /// <summary>鼠标所在屏幕的工作区（不含任务栏）。</summary>
     public static Rect GetWorkAreaAtCursor()
     {

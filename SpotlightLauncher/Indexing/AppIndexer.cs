@@ -9,19 +9,14 @@ using System.Threading.Tasks;
 namespace SpotlightLauncher.Indexing;
 
 /// <summary>
-/// 应用索引：扫描开始菜单/桌面/快速启动的快捷方式、桌面直接放置的 .exe、%LOCALAPPDATA%\Programs、
-/// Program Files 下所有可执行文件、Steam / Epic 等第三方下载器条目，以及用户在 scanpaths.json 中自定义的路径；
-/// 按与输入内容的相似度排序。
+/// 应用索引：扫描开始菜单/桌面/快速启动的快捷方式、用户在 scanpaths.json 中自定义的路径、
+/// 桌面直接放置的 .exe、%LOCALAPPDATA%\Programs、Program Files 下所有可执行文件、
+/// Steam / Epic 等第三方下载器条目；按与输入内容的相似度排序。
 /// </summary>
 public sealed class AppIndexer
 {
     private readonly object _sync = new();
     private List<AppEntry> _entries = new();
-
-    /// <summary>用户自定义额外扫描根目录（JSON 字符串数组）。文件不存在时忽略，不影响其它来源。</summary>
-    private static readonly string CustomPathsFile = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SpotlightLauncher", "scanpaths.json");
 
     public IReadOnlyList<AppEntry> Entries
     {
@@ -43,13 +38,13 @@ public sealed class AppIndexer
         var seenTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         ScanShortcuts(list, seen, seenTargets);   // 所有 .lnk/.url（开始菜单/桌面/快速启动）
+        ScanCustomPaths(list, seen, seenTargets); // 用户自定义目录（scanpaths.json）— 提前到批量扫描之前，避免 MaxEntries 占满后被静默丢弃
         ScanDesktopExes(list, seen, seenTargets); // 桌面直接放置的 .exe（便携程序/绿色软件）
         ScanLocalProgramsExes(list, seen, seenTargets); // %LOCALAPPDATA%\Programs 下的 .exe（Discord/Slack 等）
         ScanUwp(list, seen, seenTargets);          // Microsoft Store / UWP
         ScanSteam(list, seen, seenTargets);        // Steam 库（steam:// 拉起）
         ScanEpic(list, seen, seenTargets);         // Epic 清单
         ScanProgramFilesExes(list, seen, seenTargets); // 所有 Program Files 下的 .exe
-        ScanCustomPaths(list, seen, seenTargets);  // 用户自定义目录（scanpaths.json）
 
         ComputePinyin(list);
         foreach (var en in list)
@@ -123,8 +118,7 @@ public sealed class AppIndexer
                             TargetPath = target,
                             Arguments = args,
                             WorkingDirectory = (string)shortcut.WorkingDirectory ?? "",
-                            IconPath = ParseIconPath(iconLocation, out int idx),
-                            IconIndex = idx,
+                            IconPath = ParseIconPath(iconLocation),
                             IsUwp = isUwp,
                             Source = "快捷方式",
                             ExeName = isUwp ? null : Path.GetFileNameWithoutExtension(target),
@@ -433,63 +427,33 @@ public sealed class AppIndexer
     }
 
     /// <summary>
-    /// 扫描用户在 scanpaths.json（%APPDATA%\SpotlightLauncher\scanpaths.json）中列出的自定义路径。
-    /// 支持两种写法：
-    ///   1) 字符串：目录则递归扫其下 .exe；以 .exe 结尾则直接收录该单个可执行文件。
-    ///   2) 对象：{ "path": "目录或exe", "name": "友好名称(可选)", "keywords": "额外搜索词(可选)" }，
-    ///      便于把 exe 名与用户熟悉的名字（如中文名）对应起来，使按名字搜索也能命中。
-    /// 用于收录各种非标准安装位置的软件，无需改动代码即可扩展。文件不存在或格式错误时静默跳过。
+    /// 扫描用户在 scanpaths.json（%APPDATA%\SpotlightLauncher\scanpaths.json）中列出的自定义路径，
+    /// 由 ScanPathsStore 统一解析：字符串为目录则递归扫其下 .exe；为 .exe 文件则直接收录该单个可执行文件。
+    /// 用于收录各种非标准安装位置的软件（如 D:\Minecraft\tacbench.exe）。文件不存在或格式错误时静默跳过。
     /// </summary>
     private static void ScanCustomPaths(List<AppEntry> entries, HashSet<string> seen, HashSet<string> seenTargets)
     {
-        try
+        foreach (var path in ScanPathsStore.LoadPathsFromFile())
         {
-            if (!File.Exists(CustomPathsFile)) return;
-            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(CustomPathsFile));
-            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array) return;
-
-            foreach (var el in doc.RootElement.EnumerateArray())
+            if (path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
             {
-                string? path = null;
-                string? dispName = null;
-                string? keywords = null;
-
-                if (el.ValueKind == System.Text.Json.JsonValueKind.String)
+                string name = Path.GetFileNameWithoutExtension(path);
+                if (!seen.Add(name)) continue;
+                if (!seenTargets.Add(path)) continue;
+                entries.Add(new AppEntry
                 {
-                    path = el.GetString();
-                }
-                else if (el.ValueKind == System.Text.Json.JsonValueKind.Object)
-                {
-                    path = GetJsonStr(el, "path") ?? GetJsonStr(el, "Path");
-                    dispName = GetJsonStr(el, "name") ?? GetJsonStr(el, "Name");
-                    keywords = GetJsonStr(el, "keywords") ?? GetJsonStr(el, "Keywords");
-                }
-
-                if (string.IsNullOrWhiteSpace(path)) continue;
-                path = path!.Trim('"').Trim();
-
-                if (path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
-                {
-                    string name = string.IsNullOrWhiteSpace(dispName) ? Path.GetFileNameWithoutExtension(path) : dispName!;
-                    if (!seen.Add(name)) continue;
-                    if (!seenTargets.Add(path)) continue;
-                    entries.Add(new AppEntry
-                    {
-                        Name = name,
-                        TargetPath = path,
-                        IsUwp = false,
-                        Source = "自定义路径",
-                        ExeName = Path.GetFileNameWithoutExtension(path),
-                        SearchExtra = keywords ?? "",
-                    });
-                }
-                else if (Directory.Exists(path))
-                {
-                    WalkExes(path, entries, seen, seenTargets, "自定义路径");
-                }
+                    Name = name,
+                    TargetPath = path,
+                    IsUwp = false,
+                    Source = "自定义路径",
+                    ExeName = name,
+                });
+            }
+            else if (Directory.Exists(path))
+            {
+                WalkExes(path, entries, seen, seenTargets, "自定义路径");
             }
         }
-        catch { /* 自定义配置文件损坏则忽略，不影响其它来源 */ }
     }
 
     private static void WalkExes(string dir, List<AppEntry> entries, HashSet<string> seen, HashSet<string> seenTargets, string source = "程序文件")
@@ -553,14 +517,13 @@ public sealed class AppIndexer
         return false;
     }
 
-    /// <summary>解析快捷方式 IconLocation（格式 "路径[,索引]"），返回路径并输出索引。</summary>
-    private static string? ParseIconPath(string iconLocation, out int index)
+    /// <summary>解析快捷方式 IconLocation（格式 "路径[,索引]"），返回路径。</summary>
+    private static string? ParseIconPath(string iconLocation)
     {
-        index = 0;
         var s = (iconLocation ?? "").Trim().Trim('"');
         if (s.Length == 0) return null;
         int comma = s.LastIndexOf(',');
-        if (comma > 0 && int.TryParse(s[(comma + 1)..], out index))
+        if (comma > 0 && int.TryParse(s[(comma + 1)..], out _))
             return s[..comma].Trim().Trim('"');
         return s;
     }

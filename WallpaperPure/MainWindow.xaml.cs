@@ -199,6 +199,18 @@ public partial class MainWindow : Window
     private void SetAppearance(bool iconsVisible)
         => RootBorder.Background = iconsVisible ? GrayBrush : YellowBrush;
 
+    // ---------- 供 3xgcafe Console 管理面板调用 ----------
+
+    /// <summary>管理面板：切换桌面图标显隐。</summary>
+    public void IpcToggleIcons() => ToggleIcons();
+
+    /// <summary>管理面板：设为指定显隐状态（已一致则忽略）。</summary>
+    public void IpcSetIconsVisible(bool visible)
+    {
+        if (NativeMethods.AreDesktopIconsVisible() != visible)
+            ToggleIcons();
+    }
+
     // ---------- 位置持久化 ----------
 
     private void SavePosition() => SettingsStore.Save(new SettingsStore.WindowPos(Left, Top));

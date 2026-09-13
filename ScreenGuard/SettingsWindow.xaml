@@ -1,0 +1,88 @@
+<Window x:Class="ScreenGuard.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="3xgcafe Guard 设置"
+        Width="480"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True"
+        Background="#0F0F13"
+        Foreground="#E8E8EC"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True">
+    <StackPanel Margin="26,22,26,20">
+
+        <TextBlock Text="3xgcafe Guard" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock Text="空闲自动锁定 · 输入密码解锁"
+                   FontSize="12.5" Foreground="#7A7A84" Margin="0,4,0,0" />
+
+        <TextBlock x:Name="FirstRunNotice"
+                   Text="首次使用：请先设置解锁密码，之后无操作超过设定时长会自动锁屏。"
+                   FontSize="12.5" Foreground="#FAFC52" TextWrapping="Wrap"
+                   Margin="0,12,0,0" Visibility="Collapsed" />
+
+        <TextBlock Text="锁定规则" FontSize="13" FontWeight="SemiBold" Foreground="#8C8C96" Margin="0,22,0,0" />
+        <Border Background="#15151A" CornerRadius="10" Padding="16,14"
+                BorderBrush="#26262E" BorderThickness="1" Margin="0,8,0,0">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="无操作" VerticalAlignment="Center" FontSize="13.5" />
+                    <TextBox x:Name="IdleBox" Width="66" Margin="8,0,8,0" MaxLength="3"
+                             Style="{StaticResource DarkTextBox}" TextAlignment="Center" />
+                    <TextBlock Text="分钟后锁定屏幕" VerticalAlignment="Center" FontSize="13.5" />
+                </StackPanel>
+                <TextBlock Text="可填 1 – 180 分钟，建议 3 – 10 分钟" FontSize="11.5" Foreground="#6E6E78" Margin="0,7,0,0" />
+                <CheckBox x:Name="BlurBackgroundCheck" Content="锁屏背景实时模糊（可看到后方程序大致运行状态）"
+                          FontSize="13" Foreground="#D8D8DE" Margin="0,12,0,0" />
+                <CheckBox x:Name="KeepDisplayCheck" Content="锁定期间阻止屏幕关闭"
+                          FontSize="13" Foreground="#D8D8DE" Margin="0,10,0,0" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="解锁密码" FontSize="13" FontWeight="SemiBold" Foreground="#8C8C96" Margin="0,20,0,0" />
+        <Border Background="#15151A" CornerRadius="10" Padding="16,14"
+                BorderBrush="#26262E" BorderThickness="1" Margin="0,8,0,0">
+            <StackPanel>
+                <StackPanel x:Name="OldPasswordRow" Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="旧密码" Width="92" VerticalAlignment="Center" FontSize="13" />
+                    <PasswordBox x:Name="OldPassword" Width="252" Height="34"
+                                 Style="{StaticResource DarkPasswordBox}" FontSize="14" />
+                    <TextBlock Text="修改密码时必填" FontSize="11.5" Foreground="#6E6E78"
+                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="新密码" Width="92" VerticalAlignment="Center" FontSize="13" />
+                    <PasswordBox x:Name="NewPassword" Width="252" Height="34"
+                                 Style="{StaticResource DarkPasswordBox}" FontSize="14" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="确认新密码" Width="92" VerticalAlignment="Center" FontSize="13" />
+                    <PasswordBox x:Name="ConfirmPassword" Width="252" Height="34"
+                                 Style="{StaticResource DarkPasswordBox}" FontSize="14" />
+                </StackPanel>
+                <TextBlock Text="至少 4 位，可用字母 / 数字 / 符号；两个都留空表示不修改密码。"
+                           FontSize="11.5" Foreground="#6E6E78" Margin="0,9,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="锁屏提示语（可选）" FontSize="13" FontWeight="SemiBold" Foreground="#8C8C96" Margin="0,20,0,0" />
+        <TextBox x:Name="HintBox" Margin="0,8,0,0" MaxLength="60"
+                 Style="{StaticResource DarkTextBox}"
+                 Text="显示在密码框上方，例如留一个联系方式" />
+
+        <CheckBox x:Name="AutoStartCheck" Content="开机自动启动 3xgcafe Guard"
+                  FontSize="13" Foreground="#D8D8DE" Margin="0,18,0,0" />
+
+        <TextBlock x:Name="ErrorText" FontSize="12.5" Foreground="#FF6161"
+                   TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button Content="取消" Width="92" Height="36"
+                    Style="{StaticResource GhostButton}" Click="Cancel_Click" />
+            <Button Content="保存" Width="112" Height="36" Margin="10,0,0,0" IsDefault="True"
+                    Style="{StaticResource AccentButton}" Click="Save_Click" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

@@ -8,8 +8,12 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>false</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>WallpaperPure</AssemblyName>
+    <AssemblyName>3xgcafe-Wallpaper</AssemblyName>
     <RootNamespace>WallpaperPure</RootNamespace>
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0</FileVersion>
+    <Product>3xgcafe Wallpaper</Product>
+    <Description>3xgcafe 系列 · 一键隐藏 / 显示桌面图标</Description>
   </PropertyGroup>
 
   <PropertyGroup>

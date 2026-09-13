@@ -11,7 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>SpotlightLauncher</AssemblyName>
+    <AssemblyName>3xgcafe-Spotlight</AssemblyName>
     <RootNamespace>SpotlightLauncher</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
@@ -20,9 +20,11 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <!-- WPF 依赖 manifest 中的 PerMonitorV2 -->
-    <Version>1.0.0</Version>
-    <Product>SpotlightLauncher</Product>
-    <Description>Spotlight 风格应用启动器</Description>
+    <Version>2.0.0</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Company>3xgcafe</Company>
+    <Product>3xgcafe Spotlight</Product>
+    <Description>3xgcafe 系列 · Spotlight 风格应用启动器</Description>
     <!-- 运行时优化：桌面单进程用 WorkstationGC 省内存；并发 GC + 动态 PGO 提升启动 -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>

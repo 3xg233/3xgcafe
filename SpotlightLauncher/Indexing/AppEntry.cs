@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows.Media;
 
 namespace SpotlightLauncher.Indexing;
@@ -11,7 +10,6 @@ public sealed class AppEntry
     public string Arguments { get; init; } = "";
     public string WorkingDirectory { get; init; } = "";
     public string? IconPath { get; set; }      // 图标文件路径（可空）
-    public int IconIndex { get; set; }
     public bool IsUwp { get; init; }           // 商店/UWP 应用（shell:AppsFolder 启动）
 
     /// <summary>启动次数（用于排序加权）。</summary>
@@ -36,10 +34,8 @@ public sealed class AppEntry
 
     // ---------- UI 绑定辅助 ----------
 
-    [System.Text.Json.Serialization.JsonIgnore]
     public ImageSource? Icon { get; set; }
 
-    [System.Text.Json.Serialization.JsonIgnore]
     public string Subtitle =>
         IsUwp ? "Microsoft Store 应用"
               : (Source.Length > 0

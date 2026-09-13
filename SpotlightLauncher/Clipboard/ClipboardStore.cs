@@ -12,7 +12,6 @@ public enum ClipboardKind { Text, Image }
 /// <summary>单条剪贴板历史。</summary>
 public sealed class ClipboardEntry
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public DateTime Time { get; set; } = DateTime.Now;
     public ClipboardKind Kind { get; set; }
     public string? Text { get; set; }
@@ -34,15 +33,12 @@ public sealed class ClipboardStore
     public const int MaxTextLength = 4000; // 单条文本裁剪上限，控制内存与检索成本
 
     private static string StoreDir => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpotlightLauncher", "clipboard");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "3xgcafe", "Spotlight", "clipboard");
     private static string HistoryFile => Path.Combine(StoreDir, "history.json");
     private static string ImagesDir => Path.Combine(StoreDir, "images");
 
     private readonly object _lock = new();
     private readonly List<ClipboardEntry> _items = new(); // 保持新→旧
-
-    public bool IsReady { get; private set; }
-    public int Count { get { lock (_lock) return _items.Count; } }
 
     // ---------- 磁盘 ----------
 
@@ -75,7 +71,6 @@ public sealed class ClipboardStore
             catch { /* 损坏则从空历史开始 */ }
             // 保证新→旧有序
             _items.Sort((a, b) => b.Time.CompareTo(a.Time));
-            IsReady = true;
         }
     }
 
@@ -160,18 +155,6 @@ public sealed class ClipboardStore
         }
     }
 
-    public void DeleteItem(ClipboardEntry e)
-    {
-        lock (_lock)
-        {
-            if (_items.Remove(e) && e.Kind == ClipboardKind.Image
-                && !string.IsNullOrEmpty(e.ImageFile))
-            {
-                try { File.Delete(GetImageFullPath(e)); } catch { }
-            }
-        }
-    }
-
     private void TrimLocked()
     {
         // 图片总数单独受限
@@ -198,8 +181,6 @@ public sealed class ClipboardStore
     }
 
     // ---------- 读取 / 搜索 ----------
-
-    public IReadOnlyList<ClipboardEntry> Snapshot() { lock (_lock) return _items.ToArray(); }
 
     /// <summary>空关键词 → 全部（新→旧）。有关键词 → 文本条目按相关度排序。</summary>
     public List<ClipboardEntry> Search(string? query, int max)

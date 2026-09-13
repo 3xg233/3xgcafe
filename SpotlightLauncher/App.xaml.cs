@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using Microsoft.Win32;
+using SpotlightLauncher.Ipc;
 using SpotlightLauncher.Native;
 
 namespace SpotlightLauncher;
@@ -15,13 +16,18 @@ namespace SpotlightLauncher;
 public partial class App : System.Windows.Application
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunValueName = "SpotlightLauncher";
+    private const string RunValueName = "3xgcafe-Spotlight";
+
+    /// <summary>旧版本使用的自启值名，仅用于清理（避免新旧版本同时自启）。</summary>
+    private const string LegacyRunValueName = "SpotlightLauncher";
 
     private Mutex? _mutex;
     private TrayIcon? _tray;
     private MainWindow? _main;
     private HwndSource? _hwndSource;
     private MenuItem? _trayAutoStart;
+    private MenuItem? _trayKeepOpen;
+    private ToolIpcServer? _ipc;
     private bool _exiting;
 
     private const int HotKeyId = 1;
@@ -38,11 +44,11 @@ public partial class App : System.Windows.Application
             args.Handled = true;
         };
 
-        _mutex = new Mutex(true, @"Local\SpotlightLauncher_Singleton", out bool createdNew);
+        _mutex = new Mutex(true, @"Local\3xgcafe-Spotlight_Singleton", out bool createdNew);
         if (!createdNew)
         {
-            MessageBox.Show("SpotlightLauncher 已在运行。",
-                "SpotlightLauncher", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("3xgcafe Spotlight 已在运行。",
+                "3xgcafe Spotlight", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
@@ -51,6 +57,7 @@ public partial class App : System.Windows.Application
         SetAutoStart(LoadAutoStartPref());
 
         _main = new MainWindow();
+        _main.KeepOnDeactivate = LoadKeepOnDeactivatePref(); // "失活时保持窗口"偏好
 
         SetupTray();
 
@@ -61,6 +68,45 @@ public partial class App : System.Windows.Application
         if (Array.Exists(Environment.GetCommandLineArgs(),
                 a => a.Equals("--no-autohide", StringComparison.OrdinalIgnoreCase)))
             _main!.ShowLauncher();
+
+        // 3xgcafe Console 管理通道（命名管道 3xgcafe-SpotlightLauncher）
+        _ipc = new ToolIpcServer("Spotlight", HandleIpc);
+    }
+
+    /// <summary>管理面板指令：status / show / quit。</summary>
+    private string HandleIpc(string cmd, IReadOnlyDictionary<string, string> args)
+    {
+        switch (cmd)
+        {
+            case "status":
+            {
+                MainWindow? w = _main;
+                if (w == null)
+                    return ToolIpc.Response(false, "error", "窗口尚未就绪", null);
+
+                string indexText = w.IndexReady ? $"索引 {w.IndexedCount} 项" : "索引构建中";
+                string clipText = w.ClipboardReady ? $"剪贴板 {w.ClipboardCount} 条" : "剪贴板加载中";
+                var data = new Dictionary<string, string>
+                {
+                    ["indexed"] = w.IndexedCount.ToString(),
+                    ["indexReady"] = w.IndexReady ? "1" : "0",
+                    ["clipboard"] = w.ClipboardCount.ToString(),
+                    ["autostart"] = IsAutoStartEnabled() ? "1" : "0"
+                };
+                return ToolIpc.Response(true, "running", $"{indexText} · {clipText}", data);
+            }
+
+            case "show":
+                Dispatcher.BeginInvoke(new Action(() => _main?.ShowLauncher()));
+                return ToolIpc.Response(true, "running", "已唤起启动器", null);
+
+            case "quit":
+                Dispatcher.BeginInvoke(new Action(ExitApp));
+                return ToolIpc.Response(true, "stopping", "正在退出", null);
+
+            default:
+                return ToolIpc.Response(false, "error", "未知命令: " + cmd, null);
+        }
     }
 
     // ---------- 开机自启 ----------
@@ -80,6 +126,10 @@ public partial class App : System.Windows.Application
         try
         {
             using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+
+            // 清理旧版本自启项：新版接管后不应再有第二份指向旧 exe 的启动项
+            key.DeleteValue(LegacyRunValueName, throwOnMissingValue: false);
+
             if (enable)
             {
                 string exe = Environment.ProcessPath ?? "";
@@ -98,45 +148,65 @@ public partial class App : System.Windows.Application
 
     private static string AutoStartSettingsFile =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "SpotlightLauncher", "autostart.json");
+            "3xgcafe", "Spotlight", "autostart.json");
 
-    private static bool LoadAutoStartPref()
+    // ---------- 偏好文件（autostart.json 实际为偏好文件，含 AutoStart 与 KeepOnDeactivate 两键）----------
+
+    private static Dictionary<string, bool> LoadPrefs()
     {
         try
         {
-            if (File.Exists(AutoStartSettingsFile))
-            {
-                var json = File.ReadAllText(AutoStartSettingsFile);
-                if (JsonSerializer.Deserialize<Dictionary<string, bool>>(json)
-                    is { } doc && doc.TryGetValue("AutoStart", out var v))
-                    return v;
-            }
+            if (File.Exists(AutoStartSettingsFile)
+                && JsonSerializer.Deserialize<Dictionary<string, bool>>(File.ReadAllText(AutoStartSettingsFile)) is { } doc)
+                return doc;
         }
-        catch { /* 配置损坏时回退默认 */ }
-
-        // 首次运行（无配置文件）：默认开启，并落盘记住该偏好
-        SaveAutoStartPref(true);
-        return true;
+        catch { /* 配置损坏时按缺省处理 */ }
+        return new Dictionary<string, bool>();
     }
 
-    private static void SaveAutoStartPref(bool enable)
+    private static void SavePrefs(Dictionary<string, bool> prefs)
     {
         try
         {
             var dir = Path.GetDirectoryName(AutoStartSettingsFile);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            File.WriteAllText(AutoStartSettingsFile,
-                JsonSerializer.Serialize(new Dictionary<string, bool> { ["AutoStart"] = enable }));
+            File.WriteAllText(AutoStartSettingsFile, JsonSerializer.Serialize(prefs));
         }
         catch { /* 写失败不影响使用 */ }
     }
+
+    private static bool LoadAutoStartPref()
+    {
+        var prefs = LoadPrefs();
+        if (prefs.TryGetValue("AutoStart", out var v)) return v;
+        // 首次运行（无该键）：默认开启，并落盘记住该偏好
+        prefs["AutoStart"] = true;
+        SavePrefs(prefs);
+        return true;
+    }
+
+    /// <summary>"失活时保持窗口"偏好；缺键默认 false（保持原有自动隐藏行为）。</summary>
+    private static bool LoadKeepOnDeactivatePref() =>
+        LoadPrefs().TryGetValue("KeepOnDeactivate", out var v) && v;
 
     private void ToggleAutoStart()
     {
         bool next = !IsAutoStartEnabled();
         SetAutoStart(next);
-        SaveAutoStartPref(next);
+        var prefs = LoadPrefs();
+        prefs["AutoStart"] = next;
+        SavePrefs(prefs);
         if (_trayAutoStart is not null) _trayAutoStart.IsChecked = next;
+    }
+
+    private void ToggleKeepOnDeactivate()
+    {
+        var prefs = LoadPrefs();
+        bool next = !prefs.TryGetValue("KeepOnDeactivate", out var v) || !v;
+        prefs["KeepOnDeactivate"] = next;
+        SavePrefs(prefs);
+        if (_main is not null) _main.KeepOnDeactivate = next;
+        if (_trayKeepOpen is not null) _trayKeepOpen.IsChecked = next;
     }
 
     // ---------- 全局热键 ----------
@@ -154,7 +224,7 @@ public partial class App : System.Windows.Application
                 NativeMethods.MOD_CONTROL | NativeMethods.MOD_ALT | NativeMethods.MOD_NOREPEAT,
                 NativeMethods.VK_SPACE))
         {
-            _tray?.ShowBalloonTip(3000, "SpotlightLauncher",
+            _tray?.ShowBalloonTip(3000, "3xgcafe Spotlight",
                 "全局热键 Ctrl+Alt+Space 注册失败（可能被其他程序占用）。可双击托盘图标打开。",
                 TrayIcon.BalloonIcon.Warning);
         }
@@ -164,7 +234,11 @@ public partial class App : System.Windows.Application
     {
         if (msg == NativeMethods.WM_HOTKEY && wParam.ToInt32() == HotKeyId)
         {
-            _main?.ShowLauncher();
+            // 热键为可见性开关:可见则收起,隐藏则呼出
+            if (_main is not null && _main.IsVisible)
+                _main.HideLauncher();
+            else
+                _main?.ShowLauncher();
             handled = true;
         }
         return IntPtr.Zero;
@@ -174,7 +248,7 @@ public partial class App : System.Windows.Application
 
     private void SetupTray()
     {
-        _tray = new TrayIcon("SpotlightLauncher - Ctrl+Alt+Space", CreateTrayIconHandle())
+        _tray = new TrayIcon("3xgcafe Spotlight - Ctrl+Alt+Space", CreateTrayIconHandle())
         {
             ContextMenu = BuildTrayMenu(),
         };
@@ -193,6 +267,10 @@ public partial class App : System.Windows.Application
         _trayAutoStart.Click += (_, _) => ToggleAutoStart();
         menu.Items.Add(_trayAutoStart);
 
+        _trayKeepOpen = new MenuItem { Header = "失活时保持窗口", IsCheckable = true };
+        _trayKeepOpen.Click += (_, _) => ToggleKeepOnDeactivate();
+        menu.Items.Add(_trayKeepOpen);
+
         menu.Items.Add(new Separator());
 
         var exitItem = new MenuItem { Header = "退出" };
@@ -200,7 +278,11 @@ public partial class App : System.Windows.Application
         menu.Items.Add(exitItem);
 
         // 打开菜单时同步勾选状态
-        menu.Opened += (_, _) => _trayAutoStart.IsChecked = IsAutoStartEnabled();
+        menu.Opened += (_, _) =>
+        {
+            _trayAutoStart.IsChecked = IsAutoStartEnabled();
+            _trayKeepOpen.IsChecked = _main?.KeepOnDeactivate ?? false;
+        };
         return menu;
     }
 
@@ -223,6 +305,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _ipc?.Dispose();
         _tray?.Dispose();
         _mutex?.Dispose();
         base.OnExit(e);
@@ -235,7 +318,7 @@ public partial class App : System.Windows.Application
         try
         {
             var dir = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpotlightLauncher");
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "3xgcafe", "Spotlight");
             System.IO.Directory.CreateDirectory(dir);
             System.IO.File.AppendAllText(System.IO.Path.Combine(dir, "crash.log"),
                 $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {source}: {ex}\n\n");
@@ -243,9 +326,9 @@ public partial class App : System.Windows.Application
         catch { }
     }
 
-    // ---------- 托盘图标：黑白极简 ----------
+    // ---------- 托盘图标：荧光黄放大镜 ----------
 
-    /// <summary>生成 16x16 托盘图标 HIcon，调用方（TrayIcon）负责 DestroyIcon。</summary>
+    /// <summary>生成 16x16 托盘图标 HIcon:荧光黄放大镜(与应用图标一致),调用方(TrayIcon)负责 DestroyIcon。</summary>
     private static IntPtr CreateTrayIconHandle()
     {
         using var bmp = new Bitmap(16, 16);
@@ -253,10 +336,10 @@ public partial class App : System.Windows.Application
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(Color.FromArgb(0x14, 0x15, 0x1D));
-            // 荧光黄绿放大镜（终末地装饰色 RGB 250,252,82）
-            using var pen = new Pen(Color.FromArgb(0xFF, 0xFA, 0xFC, 0x52), 1.4f);
-            g.DrawEllipse(pen, 2, 2, 8, 8);
-            g.DrawLine(pen, 9, 9, 13, 13);
+            // 放大镜(荧光黄,终末地装饰色 RGB 250,252,82):圆心 (7.4, 7.4),半径 3.8,手柄 45°
+            using var pen = new Pen(Color.FromArgb(0xFF, 0xFA, 0xFC, 0x52), 1.5f);
+            g.DrawEllipse(pen, 3.5f, 3.5f, 7.7f, 7.7f);
+            g.DrawLine(pen, 10.1f, 10.1f, 12.5f, 12.5f);
         }
         return bmp.GetHicon();
     }
