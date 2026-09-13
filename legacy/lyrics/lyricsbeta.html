@@ -1,0 +1,4818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>歌词写作工具~3xgVCPhelper · V1.2 Developer Beta</title>
+    <style>
+        /* ========== 全局重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #121214;
+            --card-bg: #1c1c1e;
+            --surface: #262628;
+            --border: #2e2e32;
+            --text-primary: #eaeaec;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent: #1e3a8a;
+            --accent-hover: #2563eb;
+            --accent-light: #172554;
+            --danger: #991b1b;
+            --danger-hover: #7f1d1d;
+            --radius: 8px;
+            --radius-sm: 4px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'SF Mono', monospace;
+            --transition: 0.18s ease;
+            --line-height: 32px;
+            --line-color: rgba(255, 255, 255, 0.06);
+            --line-color-strong: rgba(255, 255, 255, 0.10);
+            --min-textarea-height: 80px;
+            --base-font-size: 16px;
+            --inspiration-width: 320px;
+            --inspiration-toggle-width: 32px;
+            --collab-width: 320px;
+            --btn-file: #2563eb;
+            --btn-file-hover: #3b82f6;
+            --btn-clip: #0d9488;
+            --btn-clip-hover: #14b8a6;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0b0b0c;
+            font-family: var(--font);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: var(--base-font-size);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ========== 主容器 ========== */
+        .app {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+            padding: 16px 16px 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--card-bg);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ========== 头部 ========== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            padding-bottom: 8px;
+            padding-right: 0;
+            border-bottom: 2px solid var(--bg);
+            transition: padding-right 0.3s ease;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .app.inspiration-open .header {
+            padding-right: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+        .logo .accent-block {
+            background: var(--accent-light);
+            color: var(--accent-hover);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 10px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+            white-space: nowrap;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 36px;
+        }
+        .btn:hover {
+            background: #333336;
+            border-color: #4a4a4e;
+            color: var(--text-primary);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-file {
+            background: var(--btn-file);
+            border-color: var(--btn-file);
+            color: #fff;
+        }
+        .btn-file:hover {
+            background: var(--btn-file-hover);
+            border-color: var(--btn-file-hover);
+            color: #fff;
+        }
+
+        .btn-clip {
+            background: var(--btn-clip);
+            border-color: var(--btn-clip);
+            color: #fff;
+        }
+        .btn-clip:hover {
+            background: var(--btn-clip-hover);
+            border-color: var(--btn-clip-hover);
+            color: #fff;
+        }
+
+        .btn-danger {
+            color: #fca5a5;
+            border-color: var(--danger);
+            background: transparent;
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            border-color: var(--danger-hover);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+            min-height: 30px;
+        }
+        .btn-xs {
+            padding: 2px 6px;
+            font-size: 11px;
+            border-radius: 4px;
+            min-height: 28px;
+        }
+
+        .btn-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
+            margin: 0 2px;
+        }
+
+        /* ========== 歌曲信息 ========== */
+        .song-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 12px;
+            flex-shrink: 0;
+            padding: 0 0 2px 0;
+            margin-right: 0;
+            transition: margin-right 0.3s ease;
+        }
+        .song-info .field-group:first-child {
+            grid-column: 1 / -1;
+        }
+        .app.inspiration-open .song-info {
+            margin-right: 0;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .field-group label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .field-group input {
+            font-family: var(--font);
+            font-size: 14px;
+            padding: 5px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text-primary);
+            transition: var(--transition);
+            width: 100%;
+            outline: none;
+            min-height: 36px;
+        }
+        .field-group input:focus {
+            border-color: var(--accent-hover);
+            background: #1f1f21;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+        }
+        .field-group input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* ========== 歌词段落区域 ========== */
+        .lyrics-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            gap: 0;
+            margin-right: 0;
+            transition: margin-right 0.3s ease;
+        }
+        .app.inspiration-open .lyrics-section {
+            margin-right: 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            padding-bottom: 4px;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .section-header .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .section-header .header-left span {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+        }
+        .section-header .header-left small {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        .btn-add-section-header {
+            padding: 3px 12px;
+            font-size: 12px;
+            border-radius: var(--radius-sm);
+            background: rgba(30, 58, 138, 0.20);
+            border: 1px solid rgba(30, 58, 138, 0.25);
+            color: var(--text-secondary);
+            transition: var(--transition);
+            min-height: 28px;
+            touch-action: manipulation;
+        }
+        .btn-add-section-header:hover {
+            background: rgba(30, 58, 138, 0.35);
+            border-color: rgba(30, 58, 138, 0.45);
+            color: var(--text-primary);
+        }
+        .btn-add-section-header:active {
+            transform: scale(0.96);
+        }
+
+        .sections-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding-top: 2px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sections-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sections-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sections-container::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+        .sections-container::-webkit-scrollbar-thumb:hover {
+            background: #555558;
+        }
+
+        /* ========== 段落卡片 — 统一上下布局 ========== */
+        .section-card {
+            display: flex;
+            flex-direction: column;
+            border-radius: 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            background: transparent;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            /* 高度由内容决定 */;
+        }
+        .section-card:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .section-card:last-child {
+            border-bottom-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .section-card.type-intro {
+            background: rgba(0, 180, 180, 0.06);
+        }
+        .section-card.type-intro:hover {
+            background: rgba(0, 180, 180, 0.10);
+        }
+        .section-card.type-verse {
+            background: rgba(200, 60, 60, 0.06);
+        }
+        .section-card.type-verse:hover {
+            background: rgba(200, 60, 60, 0.10);
+        }
+        .section-card.type-chorus {
+            background: rgba(220, 140, 40, 0.06);
+        }
+        .section-card.type-chorus:hover {
+            background: rgba(220, 140, 40, 0.10);
+        }
+        .section-card.type-outro {
+            background: rgba(40, 160, 220, 0.06);
+        }
+        .section-card.type-outro:hover {
+            background: rgba(40, 160, 220, 0.10);
+        }
+        .section-card.type-bridge {
+            background: rgba(200, 80, 160, 0.06);
+        }
+        .section-card.type-bridge:hover {
+            background: rgba(200, 80, 160, 0.10);
+        }
+
+        /* ========== 操作栏 — 顶部水平 ========== */
+        .section-toolbar {
+            width: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 8px 4px 8px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            min-height: 40px;
+            flex-wrap: wrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .section-toolbar .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+        .section-toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .section-type-select {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            color: var(--text-primary);
+            padding: 2px 6px;
+            font-size: 12px;
+            font-family: var(--font);
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition);
+            height: 28px;
+            min-width: 52px;
+            touch-action: manipulation;
+        }
+        .section-type-select:hover {
+            border-color: rgba(255, 255, 255, 0.20);
+        }
+        .section-type-select:focus {
+            border-color: var(--accent-hover);
+        }
+        .section-type-select option {
+            background: #1c1c1e;
+            color: var(--text-primary);
+        }
+
+        .section-type-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            padding: 1px 8px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.30);
+            text-align: center;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            white-space: nowrap;
+        }
+
+        .section-toolbar .btn {
+            background: rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            padding: 2px 8px;
+            font-size: 11px;
+            justify-content: center;
+            min-height: 26px;
+            border-radius: 4px;
+            touch-action: manipulation;
+        }
+        .section-toolbar .btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+        .section-toolbar .btn:active {
+            transform: scale(0.94);
+        }
+        .section-toolbar .btn-danger-sm {
+            color: #d08080;
+        }
+        .section-toolbar .btn-danger-sm:hover {
+            background: rgba(180, 40, 40, 0.30);
+            border-color: #a04040;
+            color: #fff;
+        }
+        .section-toolbar .btn:disabled {
+            opacity: 0.25;
+            cursor: default;
+        }
+        .section-toolbar .btn:disabled:hover {
+            background: rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        /* ========== 歌词输入区 ========== */
+        .section-textarea-wrapper {
+            width: 100%;
+            flex: 0 0 auto;
+            display: block;
+            padding: 0;
+            min-height: 0;
+        }
+
+        .section-textarea {
+            width: 100%;
+            padding: 12px 14px 12px 14px;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            line-height: var(--line-height);
+            border: none;
+            outline: none;
+            resize: none;
+            overflow: hidden;
+            background-color: transparent;
+            color: var(--text-primary);
+            letter-spacing: 0.2px;
+            tab-size: 4;
+            box-sizing: border-box;
+            min-height: var(--min-textarea-height);
+            height: auto;
+            text-align: center;
+            display: block;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent calc(var(--line-height) - 1px),
+                var(--line-color) calc(var(--line-height) - 1px),
+                var(--line-color) var(--line-height)
+            );
+            background-size: 100% var(--line-height);
+            background-position: 0px 12px;
+            background-attachment: local;
+            background-repeat: repeat;
+            transition: background-color 0.2s;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .section-textarea:focus {
+            background-color: rgba(0, 0, 0, 0.12);
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent calc(var(--line-height) - 1px),
+                var(--line-color-strong) calc(var(--line-height) - 1px),
+                var(--line-color-strong) var(--line-height)
+            );
+            background-size: 100% var(--line-height);
+            background-position: 0px 12px;
+            background-attachment: local;
+            background-repeat: repeat;
+        }
+
+        .section-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.14);
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+            text-align: center;
+        }
+        .section-textarea::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ========== 底部状态 ========== */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            padding-top: 8px;
+            border-top: 2px solid var(--bg);
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-right: 0;
+            transition: margin-right 0.3s ease;
+        }
+        .app.inspiration-open .footer {
+            margin-right: 0;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .stats .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 12px;
+        }
+        .stats .stat-item .num {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            min-width: 18px;
+        }
+
+        .save-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .save-status .dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .save-status .dot.saving {
+            background: #f59e0b;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+        .save-status .dot.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.85);
+            }
+        }
+
+        .footer-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* ================================================================
+                   灵感面板 — 移动端底部抽屉 + 桌面端右侧滑出
+                   ================================================================ */
+        .inspiration-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 98;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .inspiration-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .inspiration-panel {
+            position: fixed;
+            z-index: 99;
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 40px rgba(0, 0, 0, 0.5);
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s ease, height 0.3s ease;
+            pointer-events: none;
+            border-left: 1px solid var(--border);
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: var(--inspiration-width);
+            height: 100%;
+            transform: translateX(100%);
+            border-radius: 0;
+        }
+        .inspiration-panel.open {
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .inspiration-toggle-desktop {
+            position: absolute;
+            left: calc(var(--inspiration-toggle-width) * -1);
+            top: 50%;
+            transform: translateY(-50%);
+            width: var(--inspiration-toggle-width);
+            height: 120px;
+            background: var(--accent);
+            border: 1px solid #1e40af;
+            border-right: none;
+            border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #fff;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background 0.2s, color 0.2s;
+            user-select: none;
+            gap: 4px;
+            box-shadow: -4px 0 20px rgba(30, 58, 138, 0.5);
+        }
+        .inspiration-toggle-desktop:hover {
+            background: var(--accent-hover);
+            color: #fff;
+        }
+        .inspiration-toggle-desktop .toggle-icon {
+            font-size: 16px;
+            line-height: 1;
+            transition: transform 0.3s ease;
+        }
+        .inspiration-toggle-desktop .toggle-label {
+            writing-mode: vertical-rl;
+            letter-spacing: 6px;
+            font-size: 12px;
+        }
+
+        .inspiration-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .inspiration-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px 10px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .inspiration-header span {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.3px;
+        }
+        .inspiration-header .btn {
+            padding: 4px 12px;
+            font-size: 13px;
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-muted);
+            min-height: 30px;
+        }
+        .inspiration-header .btn:hover {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+        .inspiration-header .btn:active {
+            transform: scale(0.94);
+        }
+
+        .inspiration-body {
+            flex: 1;
+            padding: 14px 16px 16px 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .inspiration-body textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 150px;
+            padding: 12px 14px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.8;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        .inspiration-body textarea:focus {
+            border-color: var(--accent-hover);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+        .inspiration-body textarea::placeholder {
+            color: var(--text-muted);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 400;
+        }
+        .inspiration-body textarea::-webkit-scrollbar {
+            width: 4px;
+        }
+        .inspiration-body textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .inspiration-body textarea::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+        .inspiration-body textarea::-webkit-scrollbar-thumb:hover {
+            background: #555558;
+        }
+
+        .inspiration-footer {
+            padding: 6px 16px 12px 16px;
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            justify-content: flex-end;
+        }
+        .inspiration-footer .save-status {
+            font-size: 11px;
+        }
+
+        .inspiration-toggle-mobile {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            z-index: 50;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.5);
+            transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .inspiration-toggle-mobile:active {
+            transform: scale(0.90);
+        }
+        .inspiration-toggle-mobile .toggle-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+        .inspiration-toggle-mobile .toggle-label {
+            display: none;
+        }
+        .inspiration-toggle-mobile.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        /* 移动端聊天按钮（协作中显示，位于灵感按钮上方） */
+        .chat-toggle-mobile {
+            position: fixed;
+            bottom: 140px;
+            right: 16px;
+            z-index: 50;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.5);
+            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.2s;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chat-toggle-mobile .toggle-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+        .chat-toggle-mobile:active {
+            transform: scale(0.90);
+        }
+        .chat-toggle-mobile.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        .chat-toggle-mobile.unread {
+            box-shadow: 0 4px 20px rgba(217, 119, 6, 0.7);
+            animation: chat-unread-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes chat-unread-pulse {
+            0%,
+            100% {
+                box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+            }
+            50% {
+                box-shadow: 0 4px 24px rgba(217, 119, 6, 0.8);
+            }
+        }
+
+        /* ================================================================
+                   模态框
+                   ================================================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px 28px 20px;
+            max-width: 600px;
+            width: 92%;
+            max-height: 90vh;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+            transform: scale(0.94) translateY(12px);
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-box .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            flex-shrink: 0;
+        }
+        .modal-box .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .modal-box .modal-subtitle strong {
+            color: var(--text-primary);
+        }
+        .modal-box .modal-subtitle .code {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 1px 6px;
+            border-radius: 3px;
+            color: var(--text-secondary);
+        }
+        .modal-box .modal-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-box .modal-body textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 200px;
+            padding: 12px 14px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.7;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-box .modal-body textarea:focus {
+            border-color: var(--accent-hover);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+        .modal-box .modal-body textarea::placeholder {
+            color: var(--text-muted);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 400;
+        }
+        .modal-box .modal-body textarea::-webkit-scrollbar {
+            width: 4px;
+        }
+        .modal-box .modal-body textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-box .modal-body textarea::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+        .modal-box .modal-body textarea::-webkit-scrollbar-thumb:hover {
+            background: #555558;
+        }
+
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .modal-box .modal-actions .btn {
+            min-width: 72px;
+            justify-content: center;
+            font-size: 14px;
+            padding: 6px 18px;
+            min-height: 36px;
+        }
+        .modal-box .modal-actions .btn-file {
+            background: var(--btn-file);
+            border-color: var(--btn-file);
+            color: #fff;
+        }
+        .modal-box .modal-actions .btn-file:hover {
+            background: var(--btn-file-hover);
+            border-color: var(--btn-file-hover);
+            color: #fff;
+        }
+        .modal-box .modal-actions .btn-clip {
+            background: var(--btn-clip);
+            border-color: var(--btn-clip);
+            color: #fff;
+        }
+        .modal-box .modal-actions .btn-clip:hover {
+            background: var(--btn-clip-hover);
+            border-color: var(--btn-clip-hover);
+            color: #fff;
+        }
+
+        /* ========== 隐藏文件输入 ========== */
+        .file-input-hidden {
+            display: none;
+        }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #262628;
+            color: #f0f0f0;
+            padding: 8px 22px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 300;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            border: 1px solid var(--border);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555558;
+        }
+
+        /* ========== 空状态 ========== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            opacity: 0.5;
+            margin: 4px 0;
+        }
+        .empty-state span {
+            opacity: 0.6;
+        }
+
+        /* ================================================================
+                   桌面端样式 (≥ 820px) — 统一上下布局，与移动端一致
+                   ================================================================ */
+        @media (min-width: 820px) {
+            .app {
+                padding: 20px 32px 18px 32px;
+                gap: 12px;
+            }
+
+            .header {
+                padding-right: calc(var(--inspiration-toggle-width) + 10px);
+                padding-bottom: 10px;
+                flex-wrap: nowrap;
+            }
+            .app.inspiration-open .header {
+                padding-right: calc(var(--inspiration-width) + 10px);
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+            .logo .accent-block {
+                font-size: 17px;
+                padding: 4px 12px;
+            }
+
+            .btn {
+                padding: 8px 20px;
+                font-size: 15px;
+                min-height: auto;
+            }
+            .btn-sm {
+                padding: 5px 14px;
+                font-size: 13px;
+                min-height: auto;
+            }
+            .btn-xs {
+                padding: 3px 8px;
+                font-size: 12px;
+                min-height: 26px;
+            }
+
+            .song-info {
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 12px 20px;
+                margin-right: calc(var(--inspiration-toggle-width) + 8px);
+                padding: 2px 0 4px 0;
+            }
+            .song-info .field-group:first-child {
+                grid-column: auto;
+            }
+            .app.inspiration-open .song-info {
+                margin-right: calc(var(--inspiration-width) + 8px);
+            }
+
+            .field-group input {
+                font-size: 16px;
+                padding: 6px 14px;
+                min-height: auto;
+            }
+            .field-group label {
+                font-size: 12px;
+            }
+
+            .lyrics-section {
+                margin-right: calc(var(--inspiration-toggle-width) + 8px);
+            }
+            .app.inspiration-open .lyrics-section {
+                margin-right: calc(var(--inspiration-width) + 8px);
+            }
+
+            .section-header {
+                font-size: 14px;
+                padding-bottom: 6px;
+            }
+            .section-header .header-left span {
+                font-size: 14px;
+            }
+            .section-header .header-left small {
+                font-size: 13px;
+            }
+            .btn-add-section-header {
+                font-size: 13px;
+                padding: 4px 16px;
+                min-height: auto;
+            }
+
+            /* 桌面端卡片 — 与移动端完全一致，上下布局 */
+            .section-card {
+                flex-direction: column;
+                min-height: 0;
+            }
+
+            .section-toolbar {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+                gap: 4px;
+                padding: 6px 10px 4px 10px;
+                background: rgba(0, 0, 0, 0.15);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+                min-height: 40px;
+                flex-wrap: wrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .section-toolbar .toolbar-left {
+                flex-direction: row;
+                flex: 1;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .section-toolbar .toolbar-right {
+                flex-direction: row;
+                gap: 3px;
+                flex-wrap: wrap;
+            }
+
+            .section-type-select {
+                width: auto;
+                height: 28px;
+                font-size: 13px;
+                padding: 3px 6px;
+                min-width: 60px;
+            }
+            .section-type-label {
+                font-size: 12px;
+                padding: 2px 8px;
+            }
+
+            .section-toolbar .btn {
+                padding: 3px 8px;
+                font-size: 12px;
+                width: auto;
+                min-height: 26px;
+            }
+            .toolbar-btn-group {
+                display: inline-flex;
+                gap: 3px;
+                width: auto;
+            }
+            .toolbar-btn-group .btn {
+                flex: 0 1 auto;
+            }
+
+            .section-textarea-wrapper {
+                width: 100%;
+                flex: 0 0 auto;
+                display: block;
+                padding: 0;
+                min-height: 0;
+            }
+
+            .section-textarea {
+                padding: 14px 20px 14px 22px;
+                font-size: 17px;
+                min-height: var(--min-textarea-height);
+                background-position: 0px 14px;
+                height: auto;
+                display: block;
+            }
+            .section-textarea:focus {
+                background-position: 0px 14px;
+            }
+
+            .footer {
+                margin-right: calc(var(--inspiration-toggle-width) + 8px);
+                font-size: 14px;
+                padding-top: 10px;
+            }
+            .app.inspiration-open .footer {
+                margin-right: calc(var(--inspiration-width) + 8px);
+            }
+            .stats .stat-item {
+                font-size: 14px;
+            }
+            .stats .stat-item .num {
+                min-width: 24px;
+            }
+            .save-status {
+                font-size: 13px;
+            }
+            .footer-hint {
+                font-size: 13px;
+                display: block;
+            }
+
+            /* 桌面端灵感面板 */
+            .inspiration-panel {
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: var(--inspiration-width);
+                height: 100%;
+                transform: translateX(100%);
+                border-radius: 0;
+                border-left: 1px solid var(--border);
+            }
+            .inspiration-panel.open {
+                transform: translateX(0);
+            }
+
+            .inspiration-toggle-desktop {
+                display: flex;
+            }
+            .inspiration-toggle-mobile {
+                display: none !important;
+            }
+            .inspiration-overlay {
+                display: none !important;
+            }
+
+            .inspiration-header {
+                padding: 16px 20px 12px 20px;
+            }
+            .inspiration-header span {
+                font-size: 16px;
+            }
+            .inspiration-body {
+                padding: 16px 20px 20px 20px;
+            }
+            .inspiration-body textarea {
+                font-size: 15px;
+                min-height: 200px;
+                padding: 14px 16px;
+            }
+            .inspiration-footer {
+                padding: 8px 20px 16px 20px;
+            }
+
+            .modal-box {
+                max-width: 640px;
+                padding: 28px 32px 24px;
+            }
+            .modal-box .modal-title {
+                font-size: 20px;
+            }
+            .modal-box .modal-body textarea {
+                min-height: 280px;
+                font-size: 15px;
+            }
+            .modal-box .modal-subtitle {
+                font-size: 14px;
+            }
+
+            /* 桌面端：协作常驻侧栏 */
+            .collab-sidebar {
+                display: flex !important;
+            }
+            .collab-bar {
+                display: none !important;
+            }
+            .members-panel,
+            .members-overlay {
+                display: none !important;
+            }
+
+            .app.collab-open:not(.inspiration-open) .header {
+                padding-right: calc(var(--collab-width) + 10px);
+            }
+            .app.collab-open:not(.inspiration-open) .song-info {
+                margin-right: calc(var(--collab-width) + 8px);
+            }
+            .app.collab-open:not(.inspiration-open) .lyrics-section {
+                margin-right: calc(var(--collab-width) + 8px);
+            }
+            .app.collab-open:not(.inspiration-open) .footer {
+                margin-right: calc(var(--collab-width) + 8px);
+            }
+            .app.collab-open:not(.inspiration-open) .inspiration-toggle-desktop {
+                left: calc(-1 * (var(--collab-width) + var(--inspiration-toggle-width)));
+            }
+        }
+
+        /* ================================================================
+                   平板/中等屏幕 (560px ~ 819px) — 与移动端一致
+                   ================================================================ */
+        @media (max-width: 819px) and (min-width: 560px) {
+            :root {
+                --base-font-size: 15px;
+                --inspiration-width: 300px;
+                --inspiration-toggle-width: 28px;
+                --line-height: 30px;
+                --min-textarea-height: 70px;
+            }
+            .app {
+                padding: 16px 20px 14px 20px;
+            }
+            .logo {
+                font-size: 19px;
+            }
+            .logo .accent-block {
+                font-size: 15px;
+                padding: 3px 10px;
+            }
+            .btn {
+                font-size: 13px;
+                padding: 6px 16px;
+                min-height: 34px;
+            }
+            .btn-sm {
+                font-size: 12px;
+                padding: 4px 12px;
+                min-height: 30px;
+            }
+            .btn-xs {
+                font-size: 11px;
+                min-height: 24px;
+                padding: 2px 6px;
+            }
+            .btn-add-section-header {
+                font-size: 12px;
+                padding: 3px 12px;
+                min-height: 28px;
+            }
+            .section-textarea {
+                font-size: 15px;
+                padding: 12px 16px 12px 18px;
+                --line-height: 30px;
+                min-height: 70px;
+                background-position: 0px 12px;
+                height: auto;
+            }
+            .section-textarea:focus {
+                background-position: 0px 12px;
+            }
+            .section-type-select {
+                font-size: 12px;
+                height: 26px;
+            }
+            .section-type-label {
+                font-size: 11px;
+            }
+            .section-toolbar .btn {
+                font-size: 11px;
+                min-height: 24px;
+                padding: 2px 6px;
+            }
+            .field-group input {
+                font-size: 14px;
+                padding: 5px 12px;
+                min-height: 34px;
+            }
+            .footer {
+                font-size: 13px;
+            }
+            .save-status {
+                font-size: 12px;
+            }
+            .footer-hint {
+                font-size: 12px;
+            }
+            .song-info {
+                gap: 10px 16px;
+            }
+            .inspiration-toggle-desktop {
+                height: 100px;
+                font-size: 12px;
+            }
+            .inspiration-toggle-desktop .toggle-label {
+                font-size: 11px;
+                letter-spacing: 4px;
+            }
+            .inspiration-body textarea {
+                font-size: 14px;
+            }
+            .inspiration-header span {
+                font-size: 14px;
+            }
+            .section-header .header-left span {
+                font-size: 13px;
+            }
+            .section-header .header-left small {
+                font-size: 12px;
+            }
+            .inspiration-toggle-mobile {
+                display: none !important;
+            }
+            .inspiration-overlay {
+                display: none !important;
+            }
+
+            .modal-box {
+                max-width: 560px;
+                padding: 24px 28px 20px;
+            }
+            .modal-box .modal-body textarea {
+                min-height: 220px;
+                font-size: 14px;
+            }
+            .modal-box .modal-subtitle {
+                font-size: 13px;
+            }
+
+            /* 卡片上下布局 */
+            .section-card {
+                flex-direction: column;
+            }
+            .section-toolbar {
+                width: 100%;
+                flex-direction: row;
+                padding: 6px 8px 4px 8px;
+                min-height: 38px;
+            }
+            .section-toolbar .toolbar-left {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .section-toolbar .toolbar-right {
+                flex-direction: row;
+            }
+            .section-textarea-wrapper {
+                width: 100%;
+                flex: 0 0 auto;
+                display: block;
+            }
+            .section-textarea {
+                height: auto;
+                display: block;
+            }
+        }
+
+        /* ================================================================
+                   手机端 (< 560px) — 与现有移动端一致
+                   ================================================================ */
+        @media (max-width: 559px) {
+            :root {
+                --base-font-size: 14px;
+                --inspiration-width: 100%;
+                --inspiration-toggle-width: 0px;
+                --line-height: 28px;
+                --min-textarea-height: 60px;
+            }
+
+            .app {
+                padding: 10px 10px 8px 10px;
+                gap: 6px;
+            }
+
+            .header {
+                padding-bottom: 6px;
+                gap: 4px;
+            }
+            .logo {
+                font-size: 15px;
+                gap: 6px;
+            }
+            .logo .accent-block {
+                font-size: 12px;
+                padding: 2px 8px;
+            }
+            .header-actions {
+                gap: 3px;
+            }
+            .btn {
+                font-size: 11px;
+                padding: 4px 8px;
+                min-height: 28px;
+                gap: 2px;
+            }
+            .btn-sm {
+                font-size: 10px;
+                padding: 3px 6px;
+                min-height: 24px;
+            }
+            .btn-xs {
+                font-size: 9px;
+                min-height: 22px;
+                padding: 1px 4px;
+            }
+            .btn-divider {
+                height: 20px;
+                margin: 0 1px;
+            }
+            .btn-add-section-header {
+                font-size: 10px;
+                padding: 2px 10px;
+                min-height: 24px;
+            }
+
+            .song-info {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px 8px;
+                padding: 0;
+            }
+            .song-info .field-group:first-child {
+                grid-column: 1 / -1;
+            }
+            .field-group input {
+                font-size: 12px;
+                padding: 4px 10px;
+                min-height: 30px;
+            }
+            .field-group label {
+                font-size: 9px;
+            }
+
+            .section-header {
+                font-size: 12px;
+                padding-bottom: 3px;
+            }
+            .section-header .header-left span {
+                font-size: 12px;
+            }
+            .section-header .header-left small {
+                font-size: 10px;
+            }
+
+            .section-toolbar {
+                padding: 4px 6px 3px 6px;
+                gap: 3px;
+                min-height: 32px;
+            }
+            .section-type-select {
+                font-size: 10px;
+                height: 22px;
+                padding: 1px 4px;
+                min-width: 44px;
+            }
+            .section-type-label {
+                font-size: 9px;
+                padding: 1px 6px;
+            }
+            .section-toolbar .btn {
+                font-size: 9px;
+                min-height: 22px;
+                padding: 1px 4px;
+            }
+
+            .section-textarea {
+                font-size: 13px;
+                padding: 8px 10px 8px 10px;
+                min-height: var(--min-textarea-height);
+                --line-height: 28px;
+                background-position: 0px 8px;
+                height: auto;
+                display: block;
+            }
+            .section-textarea:focus {
+                background-position: 0px 8px;
+            }
+            .section-textarea-wrapper {
+                display: block;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .footer {
+                font-size: 11px;
+                padding-top: 6px;
+                gap: 3px;
+            }
+            .stats {
+                gap: 8px;
+            }
+            .stats .stat-item {
+                font-size: 11px;
+            }
+            .stats .stat-item .num {
+                min-width: 16px;
+            }
+            .save-status {
+                font-size: 10px;
+            }
+            .footer-hint {
+                font-size: 10px;
+                display: none;
+            }
+
+            /* 手机端灵感面板 */
+            .inspiration-panel {
+                top: auto;
+                right: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 70vh;
+                max-height: 70vh;
+                transform: translateY(100%);
+                border-radius: var(--radius) var(--radius) 0 0;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+            }
+            .inspiration-panel.open {
+                transform: translateY(0);
+            }
+
+            .inspiration-toggle-desktop {
+                display: none !important;
+            }
+            .inspiration-toggle-mobile {
+                display: flex !important;
+            }
+            .chat-toggle-mobile {
+                display: flex !important;
+            }
+            .inspiration-overlay {
+                display: block !important;
+            }
+
+            .inspiration-header {
+                padding: 12px 14px 8px 14px;
+                flex-shrink: 0;
+            }
+            .inspiration-header span {
+                font-size: 14px;
+            }
+            .inspiration-header .btn {
+                font-size: 12px;
+                padding: 3px 10px;
+                min-height: 26px;
+            }
+
+            .inspiration-body {
+                padding: 10px 14px 12px 14px;
+            }
+            .inspiration-body textarea {
+                font-size: 13px;
+                padding: 10px 12px;
+                min-height: 120px;
+            }
+
+            .inspiration-footer {
+                padding: 4px 14px 10px 14px;
+            }
+            .inspiration-footer .save-status {
+                font-size: 10px;
+            }
+
+            /* 手机端模态框 */
+            .modal-box {
+                padding: 16px 16px 14px;
+                max-width: 100%;
+                width: 94%;
+                max-height: 92vh;
+                border-radius: var(--radius);
+            }
+            .modal-box .modal-title {
+                font-size: 16px;
+            }
+            .modal-box .modal-subtitle {
+                font-size: 12px;
+                margin-bottom: 10px;
+                line-height: 1.5;
+            }
+            .modal-box .modal-body textarea {
+                min-height: 140px;
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+            .modal-box .modal-actions {
+                padding-top: 10px;
+                margin-top: 8px;
+                gap: 8px;
+            }
+            .modal-box .modal-actions .btn {
+                font-size: 13px;
+                padding: 5px 14px;
+                min-width: 60px;
+                min-height: 32px;
+            }
+
+            .toast {
+                font-size: 12px;
+                padding: 6px 16px;
+                bottom: 20px;
+                white-space: normal;
+                max-width: 90%;
+            }
+        }
+
+        /* ================================================================
+                   小屏手机额外优化 (< 400px)
+                   ================================================================ */
+        @media (max-width: 399px) {
+            .app {
+                padding: 6px 6px 4px 6px;
+            }
+            .logo {
+                font-size: 13px;
+            }
+            .logo .accent-block {
+                font-size: 10px;
+                padding: 1px 6px;
+            }
+            .btn {
+                font-size: 10px;
+                padding: 3px 6px;
+                min-height: 24px;
+            }
+            .btn-sm {
+                font-size: 9px;
+                padding: 2px 5px;
+                min-height: 22px;
+            }
+            .btn-xs {
+                font-size: 8px;
+                min-height: 18px;
+                padding: 1px 3px;
+            }
+            .btn-divider {
+                height: 16px;
+            }
+            .section-textarea {
+                font-size: 12px;
+                padding: 6px 8px;
+                --line-height: 24px;
+                min-height: 50px;
+            }
+            .section-type-select {
+                font-size: 9px;
+                height: 20px;
+                min-width: 38px;
+                padding: 1px 3px;
+            }
+            .section-toolbar {
+                padding: 3px 4px 2px 4px;
+                gap: 2px;
+                min-height: 28px;
+            }
+            .section-toolbar .btn {
+                font-size: 8px;
+                min-height: 18px;
+                padding: 1px 3px;
+            }
+            .field-group input {
+                font-size: 11px;
+                padding: 3px 8px;
+                min-height: 26px;
+            }
+            .section-header .header-left span {
+                font-size: 11px;
+            }
+            .btn-add-section-header {
+                font-size: 9px;
+                padding: 1px 8px;
+                min-height: 20px;
+            }
+            .stats .stat-item {
+                font-size: 10px;
+            }
+            .footer {
+                font-size: 10px;
+                padding-top: 4px;
+            }
+            .save-status {
+                font-size: 9px;
+            }
+            .inspiration-toggle-mobile {
+                width: 44px;
+                height: 44px;
+                bottom: 64px;
+                right: 10px;
+            }
+            .chat-toggle-mobile {
+                width: 44px;
+                height: 44px;
+                bottom: 116px;
+                right: 10px;
+            }
+            .chat-toggle-mobile .toggle-icon {
+                font-size: 18px;
+            }
+            .inspiration-toggle-mobile .toggle-icon {
+                font-size: 18px;
+            }
+            .inspiration-panel {
+                height: 75vh;
+                max-height: 75vh;
+            }
+            .inspiration-body textarea {
+                font-size: 12px;
+                padding: 8px 10px;
+                min-height: 80px;
+            }
+            .modal-box .modal-body textarea {
+                min-height: 100px;
+                font-size: 12px;
+            }
+            .modal-box .modal-actions .btn {
+                font-size: 12px;
+                padding: 4px 10px;
+                min-height: 28px;
+                min-width: 50px;
+            }
+        }
+
+        /* ========== 多人在线协作 (v1.2 beta) ========== */
+        .collab-modal {
+            max-width: 560px;
+            overflow-y: auto;
+        }
+        .collab-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .collab-tab {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+            touch-action: manipulation;
+        }
+        .collab-tab.active {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent-hover);
+        }
+        .collab-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .collab-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .collab-join {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .collab-join input {
+            flex: 1;
+            min-width: 0;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 6px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: none;
+            min-height: 36px;
+        }
+        .collab-join input:focus {
+            border-color: var(--accent-hover);
+        }
+        .collab-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .collab-step {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px 10px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .collab-step-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .collab-step textarea {
+            width: 100%;
+            min-height: 64px;
+            padding: 8px 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.5;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-primary);
+            outline: none;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .collab-step textarea:focus {
+            border-color: var(--accent-hover);
+        }
+        .collab-status {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 10px 12px;
+            margin-top: 12px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .collab-status-item strong {
+            color: var(--text-primary);
+        }
+        .collab-code {
+            font-family: var(--font-mono);
+            letter-spacing: 2px;
+        }
+
+        /* ========== 协作房间状态栏 (v1.2) ========== */
+        .collab-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 6px 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .collab-bar-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .collab-bar-room strong {
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            letter-spacing: 1px;
+        }
+        .collab-bar-count {
+            color: var(--text-muted);
+        }
+        .collab-bar-members {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
+        }
+        .member-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+        .member-role {
+            font-weight: 600;
+            padding: 0 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .member-role.host {
+            background: rgba(220, 140, 40, 0.18);
+            color: #e0a04a;
+        }
+        .member-role.guest {
+            background: rgba(37, 99, 235, 0.18);
+            color: #7aa2f7;
+        }
+        .member-role.spectator {
+            background: rgba(120, 120, 130, 0.18);
+            color: #9aa0a6;
+        }
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+        .member-name {
+            color: var(--text-primary);
+        }
+        .member-latency {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .member-edit {
+            color: var(--text-muted);
+        }
+        .member-meta {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+        .member-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .member-btn {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1.4;
+        }
+        .member-btn:hover {
+            border-color: var(--accent-hover);
+            color: var(--text-primary);
+        }
+        .member-btn-danger:hover {
+            border-color: #e5484d;
+            color: #e5484d;
+        }
+
+        /* ========== 协作侧边栏（桌面端常驻） ========== */
+        .collab-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: var(--collab-width);
+            z-index: 90;
+            background: var(--card-bg);
+            border-left: 1px solid var(--border);
+            box-shadow: -4px 0 40px rgba(0, 0, 0, 0.5);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            display: none;
+        }
+        .collab-sidebar.open {
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+        .collab-sidebar-inner {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            min-height: 0;
+        }
+        .collab-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .collab-sidebar-header .btn {
+            padding: 4px 12px;
+            font-size: 13px;
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-muted);
+            min-height: 30px;
+        }
+        .collab-sidebar-section {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px 16px 16px 16px;
+        }
+        .collab-sidebar-sub {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .collab-sidebar .members-body {
+            flex: 0 0 auto;
+            max-height: 160px;
+            overflow-y: auto;
+            padding: 0;
+            gap: 6px;
+        }
+
+        /* 聊天区 */
+        .collab-chat {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            gap: 8px;
+        }
+        .collab-chat-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+        .collab-chat-input {
+            flex-shrink: 0;
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .collab-chat-input input {
+            flex: 1;
+            min-width: 0;
+            font-family: var(--font);
+            font-size: 13px;
+            padding: 8px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: none;
+        }
+        .collab-chat-input input:focus {
+            border-color: var(--accent-hover);
+        }
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 6px 8px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+        }
+        .chat-msg.mine {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+        }
+        .chat-msg-head {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            font-size: 11px;
+        }
+        .chat-msg-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .chat-msg-time {
+            color: var(--text-muted);
+        }
+        .chat-msg-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .chat-empty {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* ========== 协作成员侧拉面板 ========== */
+        .members-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 96;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .members-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .members-panel {
+            position: fixed;
+            z-index: 97;
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 40px rgba(0, 0, 0, 0.5);
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            border-left: 1px solid var(--border);
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 300px;
+            height: 100%;
+            transform: translateX(100%);
+        }
+        .members-panel.open {
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+        .members-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+        .members-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .members-header span {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .members-count {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .members-header .btn {
+            padding: 4px 12px;
+            font-size: 13px;
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-muted);
+            min-height: 30px;
+        }
+        .members-body {
+            flex: 1;
+            padding: 12px 14px 16px 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+        .members-body .member-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: space-between;
+            padding: 8px 10px;
+        }
+        .members-empty {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .members-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 8px 14px 8px 14px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .members-tab {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .members-tab.active {
+            background: var(--surface);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+        .members-chat {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 14px 16px 14px;
+        }
+
+        @media (max-width: 559px) {
+            .members-panel {
+                top: auto;
+                right: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 60vh;
+                max-height: 60vh;
+                transform: translateY(100%);
+                border-left: none;
+                border-top: 1px solid var(--border);
+                border-radius: var(--radius) var(--radius) 0 0;
+                box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+            }
+            .members-panel.open {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== 主应用 ====== -->
+    <div class="app" id="app" role="main">
+
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="accent-block">词</span>
+                歌词写作工具
+                <span style="font-size:11px;letter-spacing:0.2px;color:#fff;">V1.2 Developer Beta</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-sm btn-file" id="importBtn" title="从 .txt 文件导入歌词">导入</button>
+                <button class="btn btn-sm btn-file" id="exportBtn" title="导出为 .txt 文件">导出</button>
+                <span class="btn-divider"></span>
+                <button class="btn btn-sm btn-clip" id="importTextBtn" title="从剪贴板粘贴歌词文本">导入文本</button>
+                <button class="btn btn-sm btn-clip" id="exportTextBtn" title="复制歌词文本到剪贴板">导出文本</button>
+                <span class="btn-divider"></span>
+                <button class="btn btn-sm btn-danger" id="clearBtn" title="清空所有内容">清空</button>
+                <span class="btn-divider"></span>
+                <button class="btn btn-sm" id="collabBtn" title="多人在线协作 (v1.2 beta)">协作</button>
+            </div>
+        </header>
+
+        <!-- ====== 协作房间状态栏 ====== -->
+        <div class="collab-bar" id="collabBar" style="display:none;">
+            <div class="collab-bar-title">
+                <span class="collab-bar-room">房间 <strong id="collabBarCode">—</strong></span>
+                <button class="btn btn-xs" id="collabBarCodeCopy" title="复制房间码" style="display:none;">复制</button>
+                <span class="collab-bar-count" id="collabBarCount">0 人</span>
+            </div>
+            <button class="btn btn-xs" id="collabBarMembersBtn" title="查看成员" style="margin-left:auto;">成员</button>
+        </div>
+
+        <!-- ====== 协作成员侧拉面板 ====== -->
+        <div class="members-overlay" id="membersOverlay"></div>
+        <div class="members-panel" id="membersPanel">
+            <div class="members-content">
+                <div class="members-header">
+                    <span>协作 <span class="members-count" id="membersCount">0</span></span>
+                    <button class="btn btn-sm" id="membersClose" title="收起">✕</button>
+                </div>
+                <div class="members-tabs">
+                    <button class="members-tab active" id="membersTabMembers">成员</button>
+                    <button class="members-tab" id="membersTabChat">聊天</button>
+                </div>
+                <div class="members-body" id="membersBody"></div>
+                <div class="members-chat" id="membersChatBody" style="display:none;">
+                    <div class="collab-chat-list" id="mobileChatList"></div>
+                    <div class="collab-chat-input">
+                        <input type="text" id="mobileChatInput" placeholder="发送消息…" maxlength="500" autocomplete="off" />
+                        <button class="btn btn-sm btn-clip" id="mobileChatSendBtn">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 协作侧边栏（桌面端常驻） ====== -->
+        <aside class="collab-sidebar" id="collabSidebar">
+            <div class="collab-sidebar-inner">
+                <div class="collab-sidebar-header">
+                    <span>协作</span>
+                    <button class="btn btn-sm" id="sbClose" title="收起">✕</button>
+                </div>
+
+                <!-- 未连接态：创建 / 加入 -->
+                <div class="collab-sidebar-section" id="sbIdlePane">
+                    <label for="sbNicknameInput" style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:2px;">我的昵称</label>
+                    <input type="text" id="sbNicknameInput" placeholder="协作时显示的名字" maxlength="12" autocomplete="off" style="width:100%;box-sizing:border-box;font-family:var(--font);font-size:13px;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text-primary);outline:none;" />
+
+                    <div class="collab-tabs">
+                        <button class="collab-tab active" data-mode="fast" id="sbTabFast">快速模式 · 短码</button>
+                        <button class="collab-tab" data-mode="manual" id="sbTabManual">离线模式 · 零第三方</button>
+                    </div>
+
+                    <div class="collab-pane" id="sbPaneFast">
+                        <div class="collab-row">
+                            <button class="btn btn-file" id="sbFastCreateBtn">创建房间</button>
+                            <div class="collab-join">
+                                <input type="text" id="sbFastCodeInput" placeholder="6位房间码" maxlength="6" autocomplete="off" />
+                                <button class="btn btn-clip" id="sbFastJoinBtn">加入</button>
+                            </div>
+                        </div>
+                        <p class="collab-hint">创建后显示房间码；其他人输入即可加入。</p>
+                        <div class="collab-row" id="sbFastCodeRow" style="display:none;">
+                            <span class="collab-hint">房间号</span>
+                            <strong class="collab-code" id="sbFastCodeDisplay">—</strong>
+                            <button class="btn btn-xs btn-clip" id="sbFastCodeCopy">复制房间号</button>
+                        </div>
+                    </div>
+
+                    <div class="collab-pane" id="sbPaneManual" style="display:none;">
+                        <div class="collab-step">
+                            <div class="collab-step-label">① 房主：生成邀请码</div>
+                            <div class="collab-row"><button class="btn btn-file" id="sbManualCreateBtn">生成邀请码</button></div>
+                            <textarea id="sbManualInvite" readonly placeholder="邀请码将显示在这里（复制发给对方）"></textarea>
+                            <div class="collab-row"><button class="btn btn-xs" id="sbManualInviteCopy">复制邀请码</button></div>
+                        </div>
+                        <div class="collab-step">
+                            <div class="collab-step-label">② 客端：粘贴邀请码 → 生成回执码</div>
+                            <textarea id="sbManualInvitePaste" placeholder="在这里粘贴房主的邀请码"></textarea>
+                            <div class="collab-row"><button class="btn btn-clip" id="sbManualJoinBtn">生成回执码</button></div>
+                            <textarea id="sbManualReply" readonly placeholder="回执码将显示在这里（复制发回给房主）"></textarea>
+                            <div class="collab-row"><button class="btn btn-xs" id="sbManualReplyCopy">复制回执码</button></div>
+                        </div>
+                        <div class="collab-step">
+                            <div class="collab-step-label">③ 房主：粘贴回执码 → 应用</div>
+                            <textarea id="sbManualReplyPaste" placeholder="在这里粘贴客端发回的回执码"></textarea>
+                            <div class="collab-row"><button class="btn btn-file" id="sbManualApplyBtn">应用回执</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已连接态：房间管理 + 成员 + 聊天 -->
+                <div class="collab-sidebar-section" id="sbConnectedPane" style="display:none;">
+                    <div class="collab-status">
+                        <span class="collab-status-item">角色：<strong id="sbRoleText">未连接</strong></span>
+                        <span class="collab-status-item">房间码：<strong id="sbCodeText" class="collab-code">—</strong> <button class="btn btn-xs" id="sbCodeCopy" title="复制房间码">复制</button></span>
+                        <span class="collab-status-item">已连接 <strong id="sbPeerCount">0</strong> 人</span>
+                    </div>
+
+                    <div class="collab-sidebar-sub">成员</div>
+                    <div class="members-body" id="sbMembersBody"></div>
+
+                    <div class="collab-sidebar-sub">聊天</div>
+                    <div class="collab-chat">
+                        <div class="collab-chat-list" id="sbChatList"></div>
+                        <div class="collab-chat-input">
+                            <input type="text" id="sbChatInput" placeholder="发送消息…" maxlength="500" autocomplete="off" />
+                            <button class="btn btn-sm btn-clip" id="sbChatSendBtn">发送</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger" id="sbDisconnectBtn">断开协作</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 歌曲信息 -->
+        <section class="song-info">
+            <div class="field-group">
+                <label for="songTitle">歌曲标题</label>
+                <input type="text" id="songTitle" placeholder="输入歌曲标题…" autocomplete="off" />
+            </div>
+            <div class="field-group">
+                <label for="songLyricist">作词</label>
+                <input type="text" id="songLyricist" placeholder="作词人" autocomplete="off" />
+            </div>
+            <div class="field-group">
+                <label for="songComposer">作曲</label>
+                <input type="text" id="songComposer" placeholder="作曲人" autocomplete="off" />
+            </div>
+        </section>
+
+        <!-- 歌词段落区域 -->
+        <section class="lyrics-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <span>歌词段落</span>
+                    <button class="btn btn-add-section-header" id="addSectionBtn">+ 添加</button>
+                    <small>每段独立 · 连续纸页</small>
+                </div>
+            </div>
+
+            <div class="sections-container" id="sectionsContainer">
+                <!-- 由 JavaScript 动态渲染 -->
+            </div>
+        </section>
+
+        <!-- 底部状态栏 -->
+        <footer class="footer">
+            <div class="footer-left">
+                <div class="stats">
+                    <span class="stat-item">段落 <span class="num" id="sectionCount">0</span></span>
+                    <span class="stat-item">行数 <span class="num" id="lineCount">0</span></span>
+                    <span class="stat-item">字数 <span class="num" id="wordCount">0</span></span>
+                </div>
+                <div class="save-status">
+                    <span class="dot" id="statusDot"></span>
+                    <span id="statusText">已保存</span>
+                </div>
+            </div>
+            <span class="footer-hint">每行一句 · 空行分段</span>
+        </footer>
+
+        <!-- 隐藏的文件输入 -->
+        <input type="file" id="fileInput" class="file-input-hidden" accept=".txt" />
+
+        <!-- ================================================================
+             清空确认对话框
+             ================================================================ -->
+        <div class="modal-overlay" id="clearModal">
+            <div class="modal-box">
+                <div class="modal-title">清空所有内容？</div>
+                <div class="modal-subtitle">此操作将删除所有歌词、标题、作者信息以及灵感笔记，且无法撤销。你确定吗？</div>
+                <div class="modal-actions">
+                    <button class="btn" id="modalCancel">取消</button>
+                    <button class="btn btn-danger" id="modalConfirm">确认清空</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             导入文本模态框
+             ================================================================ -->
+        <div class="modal-overlay" id="importTextModal">
+            <div class="modal-box">
+                <div class="modal-title">📋 从剪贴板导入歌词</div>
+                <div class="modal-subtitle">
+                    粘贴从本工具导出的纯文本内容，支持以下格式：
+                    <br />
+                    <strong>标题：</strong>歌曲标题 &nbsp;·&nbsp; <strong>作词：</strong>作词人 &nbsp;·&nbsp; <strong>作曲：</strong>作曲人
+                    <br />
+                    <span class="code">[前奏]</span> <span class="code">[主歌]</span> <span class="code">[副歌]</span> <span class="code">[尾奏]</span> <span class="code">[桥段]</span> 标记各段落
+                    <br />
+                    <strong>--- 灵感笔记 ---</strong> 后的内容将导入灵感面板
+                    <br />
+                    <span style="font-size:12px;color:var(--text-muted);">提示：按 Ctrl+Enter (⌘+Enter) 快速确认</span>
+                </div>
+                <div class="modal-body">
+                    <textarea id="importTextArea" placeholder="在此粘贴从本工具导出的歌词文本…"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" id="importTextCancel">取消</button>
+                    <button class="btn btn-clip" id="importTextConfirm">确认导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             导出文本模态框
+             ================================================================ -->
+        <div class="modal-overlay" id="exportTextModal">
+            <div class="modal-box">
+                <div class="modal-title">📋 复制歌词到剪贴板</div>
+                <div class="modal-subtitle">
+                    下方为完整的纯文本格式歌词，点击 <strong>「复制」</strong> 按钮一键复制到剪贴板。
+                    <br />
+                    您也可以手动选择并复制文本，便于在移动端分享、备份或粘贴到其他应用。
+                </div>
+                <div class="modal-body">
+                    <textarea id="exportTextArea" readonly></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-clip" id="exportTextCopy">📋 复制</button>
+                    <button class="btn" id="exportTextClose">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             多人在线协作 (v1.2 beta)
+             ================================================================ -->
+        <div class="modal-overlay" id="collabModal">
+            <div class="modal-box collab-modal">
+                <div class="modal-title">多人在线协作 <span style="font-size:12px;color:var(--text-muted);">v1.2 beta</span></div>
+                <div class="modal-subtitle">
+                    房主创建房间，其他人凭房间码加入。所有内容保存在<strong>房主的电脑</strong>上。
+                </div>
+
+                <!-- 昵称 -->
+                <div class="collab-row" style="margin-bottom:10px;">
+                    <label for="nicknameInput" style="font-size:12px;color:var(--text-secondary);flex-shrink:0;">我的昵称</label>
+                    <input type="text" id="nicknameInput" placeholder="协作时显示的名字" maxlength="12" autocomplete="off" style="flex:1;min-width:120px;font-family:var(--font);font-size:13px;padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text-primary);outline:none;" />
+                </div>
+
+                <!-- 模式切换 -->
+                <div class="collab-tabs">
+                    <button class="collab-tab active" data-mode="fast" id="collabTabFast">快速模式 · 短码</button>
+                    <button class="collab-tab" data-mode="manual" id="collabTabManual">离线模式 · 零第三方</button>
+                </div>
+
+                <!-- 快速模式 -->
+                <div class="collab-pane" id="collabPaneFast">
+                    <div class="collab-row">
+                        <button class="btn btn-file" id="fastCreateBtn">创建房间</button>
+                        <div class="collab-join">
+                            <input type="text" id="fastCodeInput" placeholder="6位房间码" maxlength="6" autocomplete="off" />
+                            <button class="btn btn-clip" id="fastJoinBtn">加入</button>
+                        </div>
+                    </div>
+                    <p class="collab-hint">创建后显示房间码；其他人输入即可加入。</p>
+                    <div class="collab-row" id="fastCodeRow" style="display:none;">
+                        <span class="collab-hint">房间号</span>
+                        <strong class="collab-code" id="fastCodeDisplay">—</strong>
+                        <button class="btn btn-xs btn-clip" id="fastCodeCopy">复制房间号</button>
+                    </div>
+                </div>
+
+                <!-- 离线模式 -->
+                <div class="collab-pane" id="collabPaneManual" style="display:none;">
+                    <div class="collab-step">
+                        <div class="collab-step-label">① 房主：生成邀请码</div>
+                        <div class="collab-row">
+                            <button class="btn btn-file" id="manualCreateBtn">生成邀请码</button>
+                        </div>
+                        <textarea id="manualInvite" readonly placeholder="邀请码将显示在这里（复制发给对方）"></textarea>
+                        <div class="collab-row">
+                            <button class="btn btn-xs" id="manualInviteCopy">复制邀请码</button>
+                        </div>
+                    </div>
+                    <div class="collab-step">
+                        <div class="collab-step-label">② 客端：粘贴邀请码 → 生成回执码</div>
+                        <textarea id="manualInvitePaste" placeholder="在这里粘贴房主的邀请码"></textarea>
+                        <div class="collab-row">
+                            <button class="btn btn-clip" id="manualJoinBtn">生成回执码</button>
+                        </div>
+                        <textarea id="manualReply" readonly placeholder="回执码将显示在这里（复制发回给房主）"></textarea>
+                        <div class="collab-row">
+                            <button class="btn btn-xs" id="manualReplyCopy">复制回执码</button>
+                        </div>
+                    </div>
+                    <div class="collab-step">
+                        <div class="collab-step-label">③ 房主：粘贴回执码 → 应用</div>
+                        <textarea id="manualReplyPaste" placeholder="在这里粘贴客端发回的回执码"></textarea>
+                        <div class="collab-row">
+                            <button class="btn btn-file" id="manualApplyBtn">应用回执</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态 -->
+                <div class="collab-status">
+                    <span class="collab-status-item">角色：<strong id="collabRoleText">未连接</strong></span>
+                    <span class="collab-status-item">房间码：<strong id="collabCodeText" class="collab-code">—</strong></span>
+                    <span class="collab-status-item">已连接 <strong id="collabPeerCount">0</strong> 人</span>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn" id="collabDisconnectBtn">断开协作</button>
+                    <button class="btn" id="collabCloseBtn">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+
+        <!-- ====== 灵感面板遮罩 ====== -->
+        <div class="inspiration-overlay" id="inspirationOverlay"></div>
+
+        <!-- ====== 灵感面板 ====== -->
+        <div class="inspiration-panel" id="inspirationPanel">
+            <!-- 桌面端 toggle 按钮 -->
+            <div class="inspiration-toggle-desktop" id="inspirationToggleDesktop" title="展开灵感笔记">
+                <span class="toggle-icon" id="toggleIconDesktop">▶</span>
+                <span class="toggle-label">灵感</span>
+            </div>
+
+            <!-- 面板内容 -->
+            <div class="inspiration-content">
+                <div class="inspiration-header">
+                    <span>灵感笔记</span>
+                    <button class="btn btn-sm" id="inspirationClose" title="收起">✕</button>
+                </div>
+                <div class="inspiration-body">
+                    <textarea id="inspirationText" placeholder="记录你的灵感、动机、词句片段…&#10;会自动保存，与歌词一起导出。"></textarea>
+                </div>
+                <div class="inspiration-footer">
+                    <div class="save-status">
+                        <span class="dot" id="inspirationDot"></span>
+                        <span id="inspirationStatus">已保存</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 移动端浮动 toggle 按钮 ====== -->
+        <button class="chat-toggle-mobile hidden" id="chatToggleMobile" aria-label="聊天">
+            <span class="toggle-icon">💬</span>
+        </button>
+        <button class="inspiration-toggle-mobile" id="inspirationToggleMobile" aria-label="灵感笔记">
+            <span class="toggle-icon" id="toggleIconMobile">💡</span>
+        </button>
+    </div>
+
+    <script>
+        (() => {
+            'use strict';
+
+            // ================================================================
+            //  核心数据
+            // ================================================================
+
+            const STORAGE_KEY = 'lyrics_app_data_v6';
+
+            const SECTION_TYPES = {
+                intro: { label: '前奏' },
+                verse: { label: '主歌' },
+                chorus: { label: '副歌' },
+                outro: { label: '尾奏' },
+                bridge: { label: '桥段' },
+            };
+
+            const DEFAULT_TYPE = 'verse';
+
+            let state = {
+                title: '',
+                lyricist: '',
+                composer: '',
+                sections: [],
+                inspiration: '',
+            };
+
+            let nextId = 1;
+            let saveTimeout = null;
+            let lastSavedData = '';
+            let inspirationSaveTimeout = null;
+
+            // ================================================================
+            //  DOM 引用
+            // ================================================================
+
+            const titleEl = document.getElementById('songTitle');
+            const lyricistEl = document.getElementById('songLyricist');
+            const composerEl = document.getElementById('songComposer');
+            const container = document.getElementById('sectionsContainer');
+            const sectionCountEl = document.getElementById('sectionCount');
+            const lineCountEl = document.getElementById('lineCount');
+            const wordCountEl = document.getElementById('wordCount');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const importBtn = document.getElementById('importBtn');
+            const importTextBtn = document.getElementById('importTextBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const exportTextBtn = document.getElementById('exportTextBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const fileInput = document.getElementById('fileInput');
+            const clearModal = document.getElementById('clearModal');
+            const modalCancel = document.getElementById('modalCancel');
+            const modalConfirm = document.getElementById('modalConfirm');
+            const toastEl = document.getElementById('toast');
+            const addSectionBtn = document.getElementById('addSectionBtn');
+            const appEl = document.getElementById('app');
+
+            // 导入文本模态框
+            const importTextModal = document.getElementById('importTextModal');
+            const importTextArea = document.getElementById('importTextArea');
+            const importTextCancel = document.getElementById('importTextCancel');
+            const importTextConfirm = document.getElementById('importTextConfirm');
+
+            // 导出文本模态框
+            const exportTextModal = document.getElementById('exportTextModal');
+            const exportTextArea = document.getElementById('exportTextArea');
+            const exportTextCopy = document.getElementById('exportTextCopy');
+            const exportTextClose = document.getElementById('exportTextClose');
+
+            // 灵感面板
+            const inspirationPanel = document.getElementById('inspirationPanel');
+            const inspirationToggleDesktop = document.getElementById('inspirationToggleDesktop');
+            const inspirationToggleMobile = document.getElementById('inspirationToggleMobile');
+            const inspirationClose = document.getElementById('inspirationClose');
+            const inspirationText = document.getElementById('inspirationText');
+            const inspirationDot = document.getElementById('inspirationDot');
+            const inspirationStatus = document.getElementById('inspirationStatus');
+            const toggleIconDesktop = document.getElementById('toggleIconDesktop');
+            const inspirationOverlay = document.getElementById('inspirationOverlay');
+
+            // ================================================================
+            //  工具函数
+            // ================================================================
+
+            function generateId() {
+                return 'sec_' + (nextId++);
+            }
+
+            function getTypeLabel(type) {
+                return SECTION_TYPES[type]?.label || type;
+            }
+
+            function getTypeClass(type) {
+                return type || 'verse';
+            }
+
+            // ================================================================
+            //  核心：auto-resize（统一逻辑）
+            // ================================================================
+
+            function autoResize(el) {
+                if (!el || !el.isConnected) return;
+                requestAnimationFrame(() => {
+                    // 临时重置高度以获取真实 scrollHeight
+                    el.style.height = 'auto';
+                    const scrollH = el.scrollHeight;
+                    const minH = parseInt(getComputedStyle(el).minHeight) || 60;
+                    const newH = Math.max(scrollH, minH);
+                    el.style.height = newH + 'px';
+                });
+            }
+
+            function bindAutoResize() {
+                const textareas = container.querySelectorAll('.section-textarea');
+                textareas.forEach(ta => {
+                    ta.removeEventListener('input', _autoResizeHandler);
+                    ta.addEventListener('input', _autoResizeHandler);
+                    autoResize(ta);
+                });
+            }
+
+            let _resizeFrameId = null;
+
+            function _autoResizeHandler(e) {
+                const el = e.currentTarget;
+                if (_resizeFrameId) {
+                    cancelAnimationFrame(_resizeFrameId);
+                    _resizeFrameId = null;
+                }
+                _resizeFrameId = requestAnimationFrame(() => {
+                    _resizeFrameId = null;
+                    autoResize(el);
+                });
+            }
+
+            // ================================================================
+            //  解析 / 生成 纯文本
+            // ================================================================
+
+            function parseLyricsText(text) {
+                const lines = text.split('\n');
+                let title = '',
+                    lyricist = '',
+                    composer = '';
+                let sections = [];
+                let currentType = DEFAULT_TYPE;
+                let currentContent = [];
+                let isInSection = false;
+                let inspiration = '';
+                let isInspirationMode = false;
+
+                const sectionRegex = /^\[(前奏|主歌|副歌|尾奏|桥段)\]\s*$/;
+                const typeMap = {
+                    '前奏': 'intro',
+                    '主歌': 'verse',
+                    '副歌': 'chorus',
+                    '尾奏': 'outro',
+                    '桥段': 'bridge',
+                };
+                const inspirationMarker = /^---\s*灵感笔记\s*---\s*$/;
+
+                for (let line of lines) {
+                    const trimmed = line.trim();
+
+                    if (inspirationMarker.test(trimmed)) {
+                        isInspirationMode = true;
+                        if (isInSection) {
+                            sections.push({
+                                id: generateId(),
+                                type: currentType,
+                                content: currentContent.join('\n').trim(),
+                            });
+                            currentContent = [];
+                            isInSection = false;
+                        }
+                        continue;
+                    }
+
+                    if (isInspirationMode) {
+                        inspiration += (inspiration ? '\n' : '') + line;
+                        continue;
+                    }
+
+                    if (!isInSection && sections.length === 0) {
+                        const titleMatch = trimmed.match(/^标题[:：]\s*(.*)/);
+                        const lyricistMatch = trimmed.match(/^作词[:：]\s*(.*)/);
+                        const composerMatch = trimmed.match(/^作曲[:：]\s*(.*)/);
+                        if (titleMatch) { title = titleMatch[1].trim(); continue; }
+                        if (lyricistMatch) { lyricist = lyricistMatch[1].trim(); continue; }
+                        if (composerMatch) { composer = composerMatch[1].trim(); continue; }
+                    }
+
+                    const sectionMatch = trimmed.match(sectionRegex);
+                    if (sectionMatch) {
+                        if (isInSection) {
+                            sections.push({
+                                id: generateId(),
+                                type: currentType,
+                                content: currentContent.join('\n').trim(),
+                            });
+                            currentContent = [];
+                        }
+                        const label = sectionMatch[1];
+                        currentType = typeMap[label] || DEFAULT_TYPE;
+                        isInSection = true;
+                        continue;
+                    }
+
+                    if (!isInSection && trimmed && sections.length === 0) {
+                        currentType = DEFAULT_TYPE;
+                        isInSection = true;
+                        currentContent.push(line);
+                        continue;
+                    }
+
+                    if (isInSection) {
+                        currentContent.push(line);
+                    }
+                }
+
+                if (isInSection) {
+                    sections.push({
+                        id: generateId(),
+                        type: currentType,
+                        content: currentContent.join('\n').trim(),
+                    });
+                }
+
+                if (sections.length === 0) {
+                    const allText = lines.join('\n').trim();
+                    if (allText) {
+                        sections.push({
+                            id: generateId(),
+                            type: DEFAULT_TYPE,
+                            content: allText,
+                        });
+                    }
+                }
+
+                if (sections.length === 0) {
+                    sections.push({
+                        id: generateId(),
+                        type: DEFAULT_TYPE,
+                        content: '',
+                    });
+                }
+
+                return { title, lyricist, composer, sections, inspiration: inspiration.trim() };
+            }
+
+            function generateLyricsText(data) {
+                let parts = [];
+                if (data.title) parts.push(`标题：${data.title}`);
+                if (data.lyricist) parts.push(`作词：${data.lyricist}`);
+                if (data.composer) parts.push(`作曲：${data.composer}`);
+                if (parts.length > 0) parts.push('');
+
+                data.sections.forEach((s, i) => {
+                    const label = getTypeLabel(s.type);
+                    parts.push(`[${label}]`);
+                    if (s.content) {
+                        parts.push(s.content);
+                    }
+                    if (i < data.sections.length - 1) parts.push('');
+                });
+
+                const inspiration = data.inspiration || '';
+                if (inspiration.trim()) {
+                    parts.push('');
+                    parts.push('--- 灵感笔记 ---');
+                    parts.push(inspiration);
+                }
+
+                return parts.join('\n');
+            }
+
+            // ================================================================
+            //  灵感面板控制
+            // ================================================================
+
+            let isInspirationOpen = false;
+
+            function toggleInspiration(open) {
+                isInspirationOpen = (open !== undefined) ? open : !isInspirationOpen;
+                inspirationPanel.classList.toggle('open', isInspirationOpen);
+                inspirationOverlay.classList.toggle('active', isInspirationOpen);
+                appEl.classList.toggle('inspiration-open', isInspirationOpen);
+                toggleIconDesktop.textContent = isInspirationOpen ? '◀' : '▶';
+                if (isInspirationOpen) {
+                    setTimeout(() => inspirationText.focus(), 150);
+                }
+            }
+
+            inspirationToggleDesktop.addEventListener('click', () => toggleInspiration());
+            inspirationToggleMobile.addEventListener('click', () => toggleInspiration());
+            inspirationClose.addEventListener('click', () => toggleInspiration(false));
+            inspirationOverlay.addEventListener('click', () => toggleInspiration(false));
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isInspirationOpen) {
+                    toggleInspiration(false);
+                }
+            });
+
+            // ================================================================
+            //  数据读写
+            // ================================================================
+
+            function getData() {
+                return {
+                    title: titleEl.value,
+                    lyricist: lyricistEl.value,
+                    composer: composerEl.value,
+                    sections: state.sections.map(s => ({ ...s })),
+                    inspiration: inspirationText.value,
+                };
+            }
+
+            function setData(data) {
+                titleEl.value = data.title || '';
+                lyricistEl.value = data.lyricist || '';
+                composerEl.value = data.composer || '';
+                state.sections = (data.sections || []).map(s => ({
+                    id: s.id || generateId(),
+                    type: s.type || DEFAULT_TYPE,
+                    content: s.content || '',
+                }));
+                inspirationText.value = data.inspiration || '';
+                updateInspirationStatus('saved', '已保存');
+
+                let maxId = 0;
+                state.sections.forEach(s => {
+                    const num = parseInt(s.id.replace('sec_', ''), 10);
+                    if (!isNaN(num) && num > maxId) maxId = num;
+                });
+                nextId = maxId + 1;
+                renderSections();
+                updateStats();
+            }
+
+            function getDataString() {
+                return JSON.stringify(getData());
+            }
+
+            // ================================================================
+            //  本地存储
+            // ================================================================
+
+            function loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        if (data.body !== undefined && !data.sections) {
+                            const sections = [];
+                            if (data.body && data.body.trim()) {
+                                sections.push({
+                                    id: generateId(),
+                                    type: DEFAULT_TYPE,
+                                    content: data.body,
+                                });
+                            }
+                            data.sections = sections;
+                            delete data.body;
+                        }
+                        if (data.inspiration === undefined) {
+                            data.inspiration = '';
+                        }
+                        setData(data);
+                        lastSavedData = getDataString();
+                        return true;
+                    }
+                } catch (_) { /* ignore */ }
+                return false;
+            }
+
+            function saveToStorage() {
+                if (collabRole === 'guest') { setStatus('saved', '已保存'); return; }
+                const current = getDataString();
+                if (current === lastSavedData) {
+                    setStatus('saved', '已保存');
+                    return;
+                }
+                try {
+                    localStorage.setItem(STORAGE_KEY, current);
+                    lastSavedData = current;
+                    setStatus('saved', '已保存');
+                } catch (e) {
+                    setStatus('error', '保存失败');
+                    console.warn('保存失败:', e);
+                }
+            }
+
+            function scheduleSave() {
+                if (collabSpectator) return;   // 旁观者只读：不落盘、不广播
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                setStatus('saving', '保存中…');
+                scheduleCollaborationBroadcast();
+                saveTimeout = setTimeout(() => {
+                    saveTimeout = null;
+                    saveToStorage();
+                }, 350);
+            }
+
+            // ================================================================
+            //  灵感独立保存
+            // ================================================================
+
+            function updateInspirationStatus(type, text) {
+                inspirationDot.className = 'dot';
+                if (type === 'saving') {
+                    inspirationDot.classList.add('saving');
+                } else if (type === 'error') {
+                    inspirationDot.classList.add('error');
+                }
+                inspirationStatus.textContent = text;
+            }
+
+            function saveInspiration() {
+                if (collabRole === 'guest') { updateInspirationStatus('saved', '已保存'); return; }
+                const current = getDataString();
+                if (current === lastSavedData) {
+                    updateInspirationStatus('saved', '已保存');
+                    return;
+                }
+                try {
+                    localStorage.setItem(STORAGE_KEY, current);
+                    lastSavedData = current;
+                    updateInspirationStatus('saved', '已保存');
+                    setStatus('saved', '已保存');
+                } catch (e) {
+                    updateInspirationStatus('error', '保存失败');
+                    console.warn('灵感保存失败:', e);
+                }
+            }
+
+            function scheduleInspirationSave() {
+                if (inspirationSaveTimeout) {
+                    clearTimeout(inspirationSaveTimeout);
+                    inspirationSaveTimeout = null;
+                }
+                updateInspirationStatus('saving', '保存中…');
+                inspirationSaveTimeout = setTimeout(() => {
+                    inspirationSaveTimeout = null;
+                    saveInspiration();
+                }, 300);
+            }
+
+            inspirationText.addEventListener('input', () => {
+                scheduleInspirationSave();
+                scheduleSave();
+            });
+
+            // ================================================================
+            //  状态指示
+            // ================================================================
+
+            function setStatus(type, text) {
+                statusDot.className = 'dot';
+                if (type === 'saving') {
+                    statusDot.classList.add('saving');
+                } else if (type === 'error') {
+                    statusDot.classList.add('error');
+                }
+                statusText.textContent = text;
+            }
+
+            // ================================================================
+            //  统计
+            // ================================================================
+
+            function updateStats() {
+                const sections = state.sections;
+                sectionCountEl.textContent = sections.length;
+                let totalLines = 0;
+                let totalWords = 0;
+                sections.forEach(s => {
+                    const text = s.content || '';
+                    const lines = text.split('\n').filter(l => l.trim() !== '');
+                    totalLines += lines.length;
+                    totalWords += text.replace(/\s/g, '').length;
+                });
+                lineCountEl.textContent = totalLines;
+                wordCountEl.textContent = totalWords;
+            }
+
+            // ================================================================
+            //  渲染段落
+            // ================================================================
+
+            function renderSections() {
+                if (!container) return;
+                const lockedAttr = collabSpectator ? ' disabled' : '';
+
+                if (state.sections.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span>暂无段落，点击上方「添加」开始写词</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                state.sections.forEach((section, index) => {
+                    const typeClass = getTypeClass(section.type);
+                    const typeLabel = getTypeLabel(section.type);
+                    const content = section.content || '';
+
+                    html += `
+                        <div class="section-card type-${typeClass}" data-id="${section.id}">
+                            <div class="section-toolbar">
+                                <div class="toolbar-left">
+                                    <select class="section-type-select" data-id="${section.id}"${lockedAttr}>
+                                        ${Object.entries(SECTION_TYPES).map(([key, val]) =>
+                                            `<option value="${key}" ${key === section.type ? 'selected' : ''}>${val.label}</option>`
+                                        ).join('')}
+                                    </select>
+                                    <span class="section-type-label">${typeLabel}</span>
+                                    <button class="btn btn-xs btn-copy" data-id="${section.id}" title="复制"${lockedAttr}>复制</button>
+                                    <div class="toolbar-btn-group" style="display:inline-flex;gap:2px;">
+                                        <button class="btn btn-xs btn-move-up" data-id="${section.id}" title="上移" ${index === 0 ? 'disabled' : ''}${lockedAttr}>↑</button>
+                                        <button class="btn btn-xs btn-move-down" data-id="${section.id}" title="下移" ${index === state.sections.length - 1 ? 'disabled' : ''}${lockedAttr}>↓</button>
+                                    </div>
+                                </div>
+                                <div class="toolbar-right">
+                                    <button class="btn btn-xs btn-danger-sm btn-delete" data-id="${section.id}" title="删除"${lockedAttr}>✕</button>
+                                </div>
+                            </div>
+                            <div class="section-textarea-wrapper">
+                                <textarea class="section-textarea" data-id="${section.id}" placeholder="输入歌词…"${lockedAttr}>${content}</textarea>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+                // ---- 事件绑定 ----
+
+                container.querySelectorAll('.section-type-select').forEach(sel => {
+                    sel.addEventListener('change', (e) => {
+                        const id = e.target.dataset.id;
+                        const newType = e.target.value;
+                        const section = state.sections.find(s => s.id === id);
+                        if (section) {
+                            section.type = newType;
+                            scheduleSave();
+                            renderSections();
+                            const card = container.querySelector(`.section-card[data-id="${id}"]`);
+                            if (card) {
+                                const ta = card.querySelector('.section-textarea');
+                                if (ta) ta.focus();
+                            }
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.section-textarea').forEach(ta => {
+                    ta.addEventListener('input', (e) => {
+                        const id = e.target.dataset.id;
+                        const section = state.sections.find(s => s.id === id);
+                        if (section) {
+                            section.content = e.target.value;
+                            updateStats();
+                            scheduleSave();
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.btn-copy').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        const idx = state.sections.findIndex(s => s.id === id);
+                        if (idx === -1) return;
+                        const original = state.sections[idx];
+                        const newSection = {
+                            id: generateId(),
+                            type: original.type,
+                            content: original.content,
+                        };
+                        state.sections.splice(idx + 1, 0, newSection);
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
+                        showToast('段落已复制');
+                        setTimeout(() => {
+                            const cards = container.querySelectorAll('.section-card');
+                            if (cards.length > idx + 1) {
+                                cards[idx + 1].scrollIntoView({ block: 'center', behavior: 'smooth' });
+                                const ta = cards[idx + 1].querySelector('.section-textarea');
+                                if (ta) ta.focus();
+                            }
+                        }, 60);
+                    });
+                });
+
+                container.querySelectorAll('.btn-move-up').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        const idx = state.sections.findIndex(s => s.id === id);
+                        if (idx <= 0) return;
+                        [state.sections[idx - 1], state.sections[idx]] = [state.sections[idx], state
+                            .sections[idx - 1]
+                        ];
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
+                        const cards = container.querySelectorAll('.section-card');
+                        if (cards.length > idx - 1) {
+                            const ta = cards[idx - 1].querySelector('.section-textarea');
+                            if (ta) ta.focus();
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.btn-move-down').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        const idx = state.sections.findIndex(s => s.id === id);
+                        if (idx === -1 || idx >= state.sections.length - 1) return;
+                        [state.sections[idx], state.sections[idx + 1]] = [state.sections[idx + 1], state
+                            .sections[idx]
+                        ];
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
+                        const cards = container.querySelectorAll('.section-card');
+                        if (cards.length > idx + 1) {
+                            const ta = cards[idx + 1].querySelector('.section-textarea');
+                            if (ta) ta.focus();
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        if (state.sections.length <= 1) {
+                            showToast('至少保留一个段落');
+                            return;
+                        }
+                        const idx = state.sections.findIndex(s => s.id === id);
+                        if (idx === -1) return;
+                        state.sections.splice(idx, 1);
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
+                        showToast('段落已删除');
+                    });
+                });
+
+                // ---- 绑定 auto-resize ----
+                setTimeout(() => {
+                    bindAutoResize();
+                }, 20);
+            }
+
+            // ================================================================
+            //  添加段落
+            // ================================================================
+
+            function addSection(type = DEFAULT_TYPE, content = '') {
+                state.sections.push({
+                    id: generateId(),
+                    type: type,
+                    content: content,
+                });
+                renderSections();
+                updateStats();
+                scheduleSave();
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                    const cards = container.querySelectorAll('.section-card');
+                    if (cards.length > 0) {
+                        const lastCard = cards[cards.length - 1];
+                        const ta = lastCard.querySelector('.section-textarea');
+                        if (ta) ta.focus();
+                    }
+                }, 50);
+                showToast('已添加新段落');
+            }
+
+            // ================================================================
+            //  导出（文件）
+            // ================================================================
+
+            function exportLyricsFile() {
+                const data = getData();
+                const content = generateLyricsText(data);
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const filename = data.title ? `${data.title}.txt` : '歌词.txt';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast(`已导出「${filename}」`);
+            }
+
+            // ================================================================
+            //  导入（文件）
+            // ================================================================
+
+            function importFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const text = e.target.result;
+                        const parsed = parseLyricsText(text);
+                        titleEl.value = parsed.title;
+                        lyricistEl.value = parsed.lyricist;
+                        composerEl.value = parsed.composer;
+                        state.sections = parsed.sections;
+                        inspirationText.value = parsed.inspiration;
+                        updateInspirationStatus('saved', '已保存');
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
+                        showToast(`已导入「${file.name}」`);
+                    } catch (err) {
+                        showToast('导入失败，请检查文件格式');
+                        console.warn('导入错误:', err);
+                    }
+                };
+                reader.onerror = () => showToast('读取文件失败');
+                reader.readAsText(file, 'UTF-8');
+            }
+
+            // ================================================================
+            //  导入文本（剪贴板）
+            // ================================================================
+
+            function importFromText(text) {
+                try {
+                    const parsed = parseLyricsText(text);
+                    titleEl.value = parsed.title;
+                    lyricistEl.value = parsed.lyricist;
+                    composerEl.value = parsed.composer;
+                    state.sections = parsed.sections;
+                    inspirationText.value = parsed.inspiration;
+                    updateInspirationStatus('saved', '已保存');
+                    renderSections();
+                    updateStats();
+                    scheduleSave();
+                    showToast('已导入文本内容');
+                    return true;
+                } catch (err) {
+                    showToast('导入失败，请检查文本格式');
+                    console.warn('导入文本错误:', err);
+                    return false;
+                }
+            }
+
+            // ================================================================
+            //  清空
+            // ================================================================
+
+            function clearAll() {
+                titleEl.value = '';
+                lyricistEl.value = '';
+                composerEl.value = '';
+                state.sections = [{
+                    id: generateId(),
+                    type: DEFAULT_TYPE,
+                    content: '',
+                }];
+                inspirationText.value = '';
+                updateInspirationStatus('saved', '已保存');
+                renderSections();
+                updateStats();
+                scheduleSave();
+                showToast('已清空所有内容');
+            }
+
+            // ================================================================
+            //  Toast
+            // ================================================================
+
+            let toastTimeout = null;
+
+            function showToast(msg) {
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                if (toastTimeout) {
+                    clearTimeout(toastTimeout);
+                    toastTimeout = null;
+                }
+                toastTimeout = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                    toastTimeout = null;
+                }, 2000);
+            }
+
+            // ================================================================
+            //  模态框控制
+            // ================================================================
+
+            function openModal(modalEl) {
+                modalEl.classList.add('active');
+            }
+
+            function closeModal(modalEl) {
+                modalEl.classList.remove('active');
+            }
+
+            // 清空模态框
+            clearBtn.addEventListener('click', () => openModal(clearModal));
+            modalCancel.addEventListener('click', () => closeModal(clearModal));
+            modalConfirm.addEventListener('click', () => {
+                closeModal(clearModal);
+                clearAll();
+            });
+            clearModal.addEventListener('click', (e) => {
+                if (e.target === clearModal) closeModal(clearModal);
+            });
+
+            // 导入文本模态框
+            importTextBtn.addEventListener('click', () => {
+                importTextArea.value = '';
+                openModal(importTextModal);
+                setTimeout(() => importTextArea.focus(), 100);
+            });
+            importTextCancel.addEventListener('click', () => closeModal(importTextModal));
+            importTextConfirm.addEventListener('click', () => {
+                const text = importTextArea.value;
+                if (!text.trim()) {
+                    showToast('请粘贴要导入的文本内容');
+                    return;
+                }
+                if (importFromText(text)) {
+                    closeModal(importTextModal);
+                }
+            });
+            importTextModal.addEventListener('click', (e) => {
+                if (e.target === importTextModal) closeModal(importTextModal);
+            });
+            importTextArea.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    importTextConfirm.click();
+                }
+            });
+
+            // 导出文本模态框
+            exportTextBtn.addEventListener('click', () => {
+                const data = getData();
+                const text = generateLyricsText(data);
+                exportTextArea.value = text;
+                openModal(exportTextModal);
+                setTimeout(() => {
+                    exportTextArea.select();
+                    exportTextArea.setSelectionRange(0, exportTextArea.value.length);
+                }, 100);
+            });
+            exportTextClose.addEventListener('click', () => closeModal(exportTextModal));
+            exportTextModal.addEventListener('click', (e) => {
+                if (e.target === exportTextModal) closeModal(exportTextModal);
+            });
+            exportTextCopy.addEventListener('click', async () => {
+                const text = exportTextArea.value;
+                if (!text) {
+                    showToast('没有可复制的内容');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast('已复制到剪贴板');
+                } catch (err) {
+                    exportTextArea.select();
+                    exportTextArea.setSelectionRange(0, text.length);
+                    showToast('请手动复制（已选中全部文本）');
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal(clearModal);
+                    closeModal(importTextModal);
+                    closeModal(exportTextModal);
+                }
+            });
+
+            // ================================================================
+            //  事件绑定
+            // ================================================================
+
+            [titleEl, lyricistEl, composerEl].forEach(el => {
+                el.addEventListener('input', () => { scheduleSave(); });
+            });
+
+            addSectionBtn.addEventListener('click', () => {
+                addSection(DEFAULT_TYPE, '');
+            });
+
+            importBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) importFromFile(file);
+                fileInput.value = '';
+            });
+
+            exportBtn.addEventListener('click', exportLyricsFile);
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    exportLyricsFile();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                if (inspirationSaveTimeout) {
+                    clearTimeout(inspirationSaveTimeout);
+                    inspirationSaveTimeout = null;
+                }
+                saveToStorage();
+            });
+
+            // ================================================================
+            //  多人在线协作 (v1.2 developer beta)
+            //  两种连接方式：A) PeerJS 快速模式（短码）  B) 手动复制粘贴（零第三方）
+            //  同步策略：房主权威 + 全量 state JSON + 防抖；客端只发不落盘
+            // ================================================================
+
+            let collabRole = null;        // 'host' | 'guest' | null
+            let roomCode = '';
+            let collabPeers = [];
+            let collabPeerCounter = 0;
+            let collabBroadcastTimer = null;
+            let peerJsInstance = null;
+            let manualPC = null;
+            let manualGuestPC = null;
+
+            // 身份 / 成员 / 延迟 / 最后编辑
+            let myPeerId = 'u' + collabGenerateCode(8);
+            let myName = '成员' + (100 + Math.floor(Math.random() * 900));
+            let lastEditTimes = {};
+            let remoteMembers = [];
+            let presenceTimer = null;
+            let preCollabData = null;
+            let watchdogTimer = null;
+            let collabSpectator = false;   // 客端被房主设为旁观（只读）时为 true
+            let chatHistory = [];           // 房间聊天记录（内存，房主权威保留会话历史）
+            let chatCounter = 0;
+            let collabConnecting = false;   // 连接进行中：'create' | 'join' | false（禁用按钮防重复点击）
+            let hasUnreadChat = false;       // 移动端聊天未读提示
+
+            // 免费 STUN（手动模式用）
+            const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+            function collabEncode(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+            function collabDecode(str) { return JSON.parse(decodeURIComponent(escape(atob(str)))); }
+
+            // 等待 ICE 收集完成，让 offer/answer 自带全部地址 → 只需往返一次
+            function collabWaitIceComplete(pc) {
+                return new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') return resolve();
+                    const on = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', on);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', on);
+                    setTimeout(resolve, 2500); // 兜底
+                });
+            }
+
+            // 统一 peer 对象（两种传输共用）
+            function collabAddPeer(conn) {
+                const peer = {
+                    id: 'p' + (++collabPeerCounter),
+                    conn,
+                    peerId: null,
+                    name: '',
+                    role: 'guest',
+                    latency: 0,
+                    lastSeen: Date.now(),
+                    send(obj) { try { conn.send(JSON.stringify(obj)); } catch (e) { /* ignore */ } }
+                };
+                collabPeers.push(peer);
+                collabRefreshPeerCount();
+                showToast(collabRole === 'host' ? '对方已加入' : '已连接房主');
+                return peer;
+            }
+
+            function collabRemovePeer(peer) {
+                collabPeers = collabPeers.filter(p => p !== peer);
+                collabRefreshPeerCount();
+                if (collabRole === 'host') hostBroadcastMembers();
+                if (collabRole === 'guest' && collabPeers.length === 0) handleHostLost();
+            }
+
+            function collabBroadcast(obj, exceptPeer) {
+                collabPeers.forEach(p => { if (p !== exceptPeer) p.send(obj); });
+            }
+
+            function collabSendToAll(obj) {
+                collabPeers.forEach(p => p.send(obj));
+            }
+
+            // ---- 房间聊天 ----
+            function collabSendChat(text) {
+                text = (text || '').trim();
+                if (!text || !collabRole) return;
+                const message = {
+                    id: myPeerId + '-' + Date.now() + '-' + (++chatCounter),
+                    from: myPeerId, fromName: myName, text: text, ts: Date.now()
+                };
+                appendChatMessage(message);
+                collabSendToAll({ type: 'chat', message: message });
+            }
+
+            function appendChatMessage(m) {
+                if (!m || !m.id) return;
+                if (chatHistory.some(x => x.id === m.id)) return;  // 去重兜底
+                chatHistory.push(m);
+                renderChatMessages();
+                if (m.from !== myPeerId && !isChatVisible()) {
+                    hasUnreadChat = true;
+                    updateChatToggle();
+                }
+            }
+
+            function renderChatMessages() {
+                ['sbChatList', 'mobileChatList'].forEach(id => {
+                    const box = document.getElementById(id);
+                    if (!box) return;
+                    if (!chatHistory.length) {
+                        box.innerHTML = '<div class="chat-empty">暂无消息</div>';
+                        return;
+                    }
+                    box.innerHTML = chatHistory.map(m => {
+                        const isMine = m.from === myPeerId;
+                        const time = new Date(m.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                        return '<div class="chat-msg' + (isMine ? ' mine' : '') + '">'
+                            + '<div class="chat-msg-head">'
+                            + '<span class="chat-msg-name">' + escapeHtml(m.fromName || '成员') + '</span>'
+                            + '<span class="chat-msg-time">' + time + '</span>'
+                            + '</div>'
+                            + '<div class="chat-msg-text">' + escapeHtml(m.text) + '</div>'
+                            + '</div>';
+                    }).join('');
+                    box.scrollTop = box.scrollHeight;
+                });
+            }
+
+            // 聊天是否当前可见（移动端成员抽屉聊天标签 / 桌面端侧栏）
+            function isChatVisible() {
+                const mobileChat = membersPanel.classList.contains('open') && membersChatBody.style.display !== 'none';
+                const desktopChat = collabSidebar.classList.contains('open') && !!collabRole;
+                return mobileChat || desktopChat;
+            }
+
+            function updateChatToggle() {
+                if (!chatToggleMobile) return;
+                chatToggleMobile.classList.toggle('hidden', !collabRole);
+                chatToggleMobile.classList.toggle('unread', hasUnreadChat);
+            }
+
+            function markChatRead() {
+                if (!hasUnreadChat) return;
+                hasUnreadChat = false;
+                updateChatToggle();
+            }
+
+            // 接收消息统一入口
+            function collabHandleIncoming(peer, raw) {
+                let msg;
+                try { msg = JSON.parse(raw); } catch (e) { return; }
+                if (!msg || typeof msg !== 'object') return;
+                peer.lastSeen = Date.now();
+
+                if (msg.type === 'hello') {
+                    peer.peerId = msg.id;
+                    peer.name = msg.name || '';
+                    if (collabRole === 'host') hostBroadcastMembers();
+                    return;
+                }
+                if (msg.type === 'state') {
+                    if (collabRole === 'host' && peer.role === 'spectator') return; // 旁观者无权提交
+                    lastEditTimes[peer.peerId || peer.id] = Date.now();
+                    applyRemoteState(msg.data || {});
+                    if (collabRole === 'host') {
+                        saveToStorage();                 // 房主权威落盘
+                        collabBroadcast(msg, peer);      // 转发给其他客端
+                    }
+                    return;
+                }
+                if (msg.type === 'kick') {
+                    handleKicked();
+                    return;
+                }
+                if (msg.type === 'role') {
+                    collabSpectator = (msg.role === 'spectator');
+                    setSpectatorLock(collabSpectator);
+                    collabRenderStatus();
+                    showToast(collabSpectator ? '房主已将你设为旁观（只读）' : '房主已恢复你的编辑权限');
+                    return;
+                }
+                if (msg.type === 'ping') {
+                    peer.send({ type: 'pong', t: msg.t });
+                    return;
+                }
+                if (msg.type === 'pong') {
+                    peer.latency = Date.now() - msg.t;
+                    return;
+                }
+                if (msg.type === 'chat') {
+                    appendChatMessage(msg.message);
+                    if (collabRole === 'host') collabBroadcast(msg, peer);  // 房主转发给其他客端
+                    return;
+                }
+                if (msg.type === 'chat-history') {
+                    chatHistory = (msg.messages || []).slice();
+                    renderChatMessages();
+                    return;
+                }
+                if (msg.type === 'members') {
+                    remoteMembers = msg.members || [];
+                    renderCollabBar();
+                    renderCollabSidebar();
+                    return;
+                }
+            }
+
+            // 本地编辑 → 广播（挂到 scheduleSave 里）
+            function scheduleCollaborationBroadcast() {
+                lastEditTimes[myPeerId] = Date.now();
+                if (collabPeers.length === 0) return;
+                if (collabBroadcastTimer) { clearTimeout(collabBroadcastTimer); collabBroadcastTimer = null; }
+                collabBroadcastTimer = setTimeout(() => {
+                    collabBroadcastTimer = null;
+                    collabSendToAll({ type: 'state', data: getData() });
+                }, 300);
+            }
+
+            // 应用远端状态（原地更新 + 跳过聚焦元素，避免光标跳动）
+            function collabSetInputUnlessFocused(el, value) {
+                if (!el) return;
+                if (document.activeElement === el) return;   // 正在编辑 → 本地优先
+                if (el.value !== value) el.value = value;
+            }
+
+            function applyRemoteState(data) {
+                collabSetInputUnlessFocused(titleEl, data.title || '');
+                collabSetInputUnlessFocused(lyricistEl, data.lyricist || '');
+                collabSetInputUnlessFocused(composerEl, data.composer || '');
+                collabSetInputUnlessFocused(inspirationText, data.inspiration || '');
+
+                const remoteSections = Array.isArray(data.sections) ? data.sections : [];
+                const focusedTa = (document.activeElement && document.activeElement.classList &&
+                    document.activeElement.classList.contains('section-textarea')) ? document.activeElement : null;
+                const focusedId = focusedTa ? focusedTa.dataset.id : null;
+
+                // 结构是否变化（增删/类型变化/顺序变化）→ 需全量重渲染
+                let structuralChange = remoteSections.length !== state.sections.length;
+                if (!structuralChange) {
+                    for (let i = 0; i < remoteSections.length; i++) {
+                        const r = remoteSections[i], c = state.sections[i];
+                        if (r.id !== c.id || r.type !== c.type) { structuralChange = true; break; }
+                    }
+                }
+
+                if (structuralChange) {
+                    state.sections = remoteSections.map(s => ({
+                        id: s.id || generateId(),
+                        type: s.type || DEFAULT_TYPE,
+                        content: s.content || '',
+                    }));
+                    renderSections();
+                    bindAutoResize();
+                    updateStats();
+                    return;
+                }
+
+                // 结构未变：只同步文本
+                for (let i = 0; i < remoteSections.length; i++) {
+                    const r = remoteSections[i], c = state.sections[i];
+                    if (r.content !== c.content && r.id !== focusedId) {
+                        c.content = r.content;
+                        const ta = container.querySelector('.section-textarea[data-id="' + r.id + '"]');
+                        if (ta) { ta.value = r.content; autoResize(ta); }
+                    }
+                }
+                updateStats();
+            }
+
+            // ================================================================
+            //  传输 A：PeerJS 快速模式（6 位短码，按需加载库）
+            // ================================================================
+
+            function loadPeerJs() {
+                return new Promise((resolve, reject) => {
+                    if (window.Peer) return resolve();
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
+                    s.onload = () => resolve();
+                    s.onerror = () => reject(new Error('PeerJS 库加载失败，请检查网络'));
+                    document.head.appendChild(s);
+                });
+            }
+
+            function collabGenerateCode(len) {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去掉易混淆字符
+                let out = '';
+                for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+                return out;
+            }
+
+            function collabPeerErrorText(err) {
+                const t = err && err.type ? err.type : '';
+                const map = {
+                    'peer-unavailable': '找不到该房间，请确认房间码',
+                    'unavailable-id': '房间码已被占用，请重新创建',
+                    'network': '网络错误',
+                    'browser-incompatible': '浏览器不支持 WebRTC',
+                    'server-error': '中继服务异常',
+                    'disconnected': '与中继服务断开',
+                };
+                return map[t] || (t || '未知错误');
+            }
+
+            function collabWireConn(conn) {
+                let peer = null;
+                conn.on('open', () => {
+                    clearConnecting();
+                    peer = collabAddPeer(conn);
+                    peer.send({ type: 'hello', id: myPeerId, name: myName });
+                    if (collabRole === 'host') {
+                        peer.send({ type: 'state', data: getData() });
+                        peer.send({ type: 'chat-history', messages: chatHistory });
+                    }
+                });
+                conn.on('data', (data) => { if (peer) collabHandleIncoming(peer, data); });
+                conn.on('close', () => { if (peer) collabRemovePeer(peer); });
+                conn.on('error', () => {});
+            }
+
+            async function fastCreateRoom() {
+                if (collabRole) { clearConnecting(); showToast('已在协作中，请先断开'); return; }
+                try { await loadPeerJs(); } catch (e) { clearConnecting(); showToast(e.message); return; }
+
+                const code = collabGenerateCode(6);
+                const peerId = 'vcp-' + code;
+
+                peerJsInstance = new Peer(peerId, { debug: 1 });
+
+                peerJsInstance.on('open', () => {
+                    collabRole = 'host';
+                    roomCode = code;
+                    hostStartPresence();
+                    collabRenderStatus();
+                    clearConnecting();
+                    showToast('房间已创建，房间码 ' + code);
+                });
+                peerJsInstance.on('connection', (conn) => collabWireConn(conn));
+                peerJsInstance.on('error', (err) => {
+                    clearConnecting();
+                    showToast('创建失败：' + collabPeerErrorText(err));
+                    collabRole = null;
+                    roomCode = '';
+                    collabRenderStatus();
+                });
+
+                collabRenderStatus();
+            }
+
+            async function fastJoinRoom(code) {
+                code = (code || '').trim().toUpperCase();
+                if (!code) { clearConnecting(); showToast('请输入房间码'); return; }
+                if (collabRole) { clearConnecting(); showToast('已在协作中，请先断开'); return; }
+                preCollabData = getData();
+                try { await loadPeerJs(); } catch (e) { clearConnecting(); showToast(e.message); return; }
+
+                peerJsInstance = new Peer({ debug: 1 });
+                const peerId = 'vcp-' + code;
+
+                peerJsInstance.on('open', () => {
+                    collabRole = 'guest';
+                    roomCode = code;
+                    const conn = peerJsInstance.connect(peerId, { reliable: true });
+                    collabWireConn(conn);
+                    collabRenderStatus();
+                    showToast('正在加入房间 ' + code + ' …');
+                });
+                peerJsInstance.on('error', (err) => {
+                    clearConnecting();
+                    showToast('加入失败：' + collabPeerErrorText(err));
+                    if (err && (err.type === 'peer-unavailable' || err.type === 'unavailable-id')) {
+                        collabRole = null;
+                        roomCode = '';
+                        collabRenderStatus();
+                    }
+                });
+            }
+
+            // ================================================================
+            //  传输 B：手动复制粘贴（零第三方）
+            // ================================================================
+
+            function collabWireDataChannel(dc) {
+                let peer = null;
+                dc.onopen = () => {
+                    peer = collabAddPeer(dc);
+                    peer.send({ type: 'hello', id: myPeerId, name: myName });
+                    if (collabRole === 'host') {
+                        peer.send({ type: 'state', data: getData() });
+                        peer.send({ type: 'chat-history', messages: chatHistory });
+                    }
+                };
+                dc.onmessage = (e) => { if (peer) collabHandleIncoming(peer, e.data); };
+                dc.onclose = () => { if (peer) collabRemovePeer(peer); };
+                dc.onerror = () => {};
+            }
+
+            async function manualCreateRoom() {
+                if (collabRole) { showToast('已在协作中，请先断开'); return ''; }
+                try {
+                    collabRole = 'host';
+                    roomCode = '';
+                    hostStartPresence();
+                    manualPC = new RTCPeerConnection(RTC_CONFIG);
+                    const dc = manualPC.createDataChannel('vcp');
+                    collabWireDataChannel(dc);
+                    const offer = await manualPC.createOffer();
+                    await manualPC.setLocalDescription(offer);
+                    await collabWaitIceComplete(manualPC);
+                    collabRenderStatus();
+                    return collabEncode(manualPC.localDescription);
+                } catch (e) {
+                    collabRole = null;
+                    showToast('创建邀请码失败');
+                    return '';
+                }
+            }
+
+            async function manualApplyReply(replyStr) {
+                if (!manualPC) { showToast('请先创建房间'); return; }
+                try {
+                    const answer = collabDecode(replyStr);
+                    await manualPC.setRemoteDescription(answer);
+                    showToast('回执已应用，等待连接…');
+                } catch (e) {
+                    showToast('回执码无效');
+                }
+            }
+
+            async function manualJoinRoom(inviteStr) {
+                if (collabRole) { showToast('已在协作中，请先断开'); return ''; }
+                preCollabData = getData();
+                try {
+                    const offer = collabDecode(inviteStr);
+                    collabRole = 'guest';
+                    roomCode = '';
+                    manualGuestPC = new RTCPeerConnection(RTC_CONFIG);
+                    manualGuestPC.ondatachannel = (e) => collabWireDataChannel(e.channel);
+                    await manualGuestPC.setRemoteDescription(offer);
+                    const answer = await manualGuestPC.createAnswer();
+                    await manualGuestPC.setLocalDescription(answer);
+                    await collabWaitIceComplete(manualGuestPC);
+                    collabRenderStatus();
+                    return collabEncode(manualGuestPC.localDescription);
+                } catch (e) {
+                    collabRole = null;
+                    showToast('邀请码无效');
+                    return '';
+                }
+            }
+
+            function collabDisconnect() {
+                const wasGuest = (collabRole === 'guest');
+                collabPeers.forEach(p => { try { p.conn.close(); } catch (e) {} });
+                collabPeers = [];
+                if (peerJsInstance) { try { peerJsInstance.destroy(); } catch (e) {} peerJsInstance = null; }
+                if (manualPC) { try { manualPC.close(); } catch (e) {} manualPC = null; }
+                if (manualGuestPC) { try { manualGuestPC.close(); } catch (e) {} manualGuestPC = null; }
+                collabSpectator = false;
+                setSpectatorLock(false);
+                collabRole = null;
+                roomCode = '';
+                remoteMembers = [];
+                chatHistory = [];
+                hasUnreadChat = false;
+                if (presenceTimer) { clearInterval(presenceTimer); presenceTimer = null; }
+                if (collabBroadcastTimer) { clearTimeout(collabBroadcastTimer); collabBroadcastTimer = null; }
+                collabRenderStatus();
+                collabRefreshPeerCount();
+                renderCollabBar();
+                if (wasGuest) restoreGuestData();
+                showToast('已断开协作');
+            }
+
+            // ================================================================
+            //  协作 UI
+            // ================================================================
+
+            function collabRefreshPeerCount() {
+                const el = document.getElementById('collabPeerCount');
+                if (el) el.textContent = collabPeers.length;
+            }
+
+            function collabRenderStatus() {
+                const roleEl = document.getElementById('collabRoleText');
+                const codeEl = document.getElementById('collabCodeText');
+                if (roleEl) {
+                    roleEl.textContent = collabRole === 'host' ? '房主'
+                        : (collabRole === 'guest' ? (collabSpectator ? '旁观' : '客端') : '未连接');
+                }
+                if (codeEl) codeEl.textContent = roomCode || '—';
+                if (fastCodeRow) {
+                    fastCodeRow.style.display = roomCode ? 'flex' : 'none';
+                    if (fastCodeDisplay) fastCodeDisplay.textContent = roomCode || '—';
+                }
+                const btn = document.getElementById('collabBtn');
+                if (btn) {
+                    if (collabRole) { btn.classList.add('btn-clip'); btn.textContent = '协作 ✓'; }
+                    else { btn.classList.remove('btn-clip'); btn.textContent = '协作'; }
+                }
+                renderCollabBar();
+                renderCollabSidebar();
+                updateChatToggle();
+            }
+
+            function collabCopyText(text, label) {
+                if (!text) { showToast('暂无内容可复制'); return; }
+                const done = () => showToast(label + '已复制');
+                const fallback = () => showToast('自动复制失败，请手动全选复制');
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done).catch(fallback);
+                } else { fallback(); }
+            }
+
+            function collabFillAndSelect(el, value) {
+                el.value = value;
+                el.focus();
+                el.select();
+            }
+
+            // ================================================================
+            //  房间状态栏：成员 / 身份 / 延迟 / 最后编辑
+            // ================================================================
+
+            function readNickname() {
+                const v = (sbNicknameInput && sbNicknameInput.value.trim())
+                    || (nicknameInput && nicknameInput.value.trim());
+                if (v) myName = v;
+                return myName;
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            }
+
+            function formatRelativeTime(ts) {
+                if (!ts) return '暂无';
+                const diff = Date.now() - ts;
+                if (diff < 10000) return '刚刚';
+                if (diff < 60000) return Math.floor(diff / 1000) + '秒前';
+                if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+                if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+                return Math.floor(diff / 86400000) + '天前';
+            }
+
+            function buildMembersList() {
+                const list = [{
+                    id: myPeerId, name: myName, role: 'host',
+                    latency: 0, lastEdit: lastEditTimes[myPeerId] || 0
+                }];
+                collabPeers.forEach(p => {
+                    const pid = p.peerId || p.id;
+                    list.push({
+                        id: pid, name: p.name || '成员', role: p.role || 'guest',
+                        latency: p.latency || 0, lastEdit: lastEditTimes[pid] || 0
+                    });
+                });
+                return list;
+            }
+
+            function hostBroadcastMembers() {
+                if (collabRole !== 'host') return;
+                remoteMembers = buildMembersList();
+                collabSendToAll({ type: 'members', members: remoteMembers });
+                renderCollabBar();
+                renderMembersList(document.getElementById('sbMembersBody'));
+            }
+
+            function hostStartPresence() {
+                if (presenceTimer) clearInterval(presenceTimer);
+                hostBroadcastMembers(); // 立即广播一次，房主能马上看到自己
+                presenceTimer = setInterval(() => {
+                    if (collabRole !== 'host') return;
+                    hostBroadcastMembers();
+                }, 5000);
+            }
+
+            // 房主掉线（客端视角）：重置协作状态并恢复本机内容
+            function guestExit(message) {
+                collabRole = null;
+                roomCode = '';
+                collabSpectator = false;
+                setSpectatorLock(false);
+                remoteMembers = [];
+                chatHistory = [];
+                hasUnreadChat = false;
+                if (presenceTimer) { clearInterval(presenceTimer); presenceTimer = null; }
+                if (collabBroadcastTimer) { clearTimeout(collabBroadcastTimer); collabBroadcastTimer = null; }
+                if (peerJsInstance) { try { peerJsInstance.destroy(); } catch (e) {} peerJsInstance = null; }
+                if (manualGuestPC) { try { manualGuestPC.close(); } catch (e) {} manualGuestPC = null; }
+                collabPeers.forEach(p => { try { p.conn.close(); } catch (e) {} });
+                collabPeers = [];
+                collabRenderStatus();
+                collabRefreshPeerCount();
+                renderCollabBar();
+                toggleMembers(false);
+                restoreGuestData();
+                showToast(message);
+            }
+
+            function handleHostLost() {
+                console.warn('[协作] 房主掉线，已退出房间');
+                guestExit('与房主失去连接，已退出房间');
+            }
+
+            function handleKicked() {
+                console.warn('[协作] 已被房主移出房间');
+                guestExit('你已被房主移出房间');
+            }
+
+            // 旁观锁定：禁用/恢复本地编辑控件
+            function setSpectatorLock(lock) {
+                if (lock && collabBroadcastTimer) { clearTimeout(collabBroadcastTimer); collabBroadcastTimer = null; }
+                [titleEl, lyricistEl, composerEl, inspirationText].forEach(el => { if (el) el.disabled = lock; });
+                container.querySelectorAll('.section-textarea').forEach(el => { el.disabled = lock; });
+                container.querySelectorAll('.section-toolbar .btn, .section-toolbar select').forEach(el => { el.disabled = lock; });
+                if (addSectionBtn) addSectionBtn.disabled = lock;
+                [importBtn, importTextBtn, clearBtn].forEach(el => { if (el) el.disabled = lock; });
+            }
+
+            // 房主：踢出成员
+            function hostKickMember(memberId) {
+                if (collabRole !== 'host') return;
+                const peer = collabPeers.find(p => (p.peerId || p.id) === memberId);
+                if (!peer) return;
+                try { peer.send({ type: 'kick' }); } catch (e) {}
+                setTimeout(() => { try { peer.conn.close(); } catch (e) {} }, 150);
+                collabRemovePeer(peer);
+                showToast('已移出 ' + (peer.name || '成员'));
+            }
+
+            // 房主：设置成员角色（guest 可编辑 / spectator 旁观只读）
+            function hostSetMemberRole(memberId, role) {
+                if (collabRole !== 'host') return;
+                const peer = collabPeers.find(p => (p.peerId || p.id) === memberId);
+                if (!peer) return;
+                peer.role = role;
+                try { peer.send({ type: 'role', role }); } catch (e) {}
+                hostBroadcastMembers();
+                showToast('已将 ' + (peer.name || '成员') + (role === 'spectator' ? ' 设为旁观' : ' 恢复编辑'));
+            }
+
+            // 成员操作（踢出 / 设为旁观），供成员抽屉与协作侧栏共用的事件委托
+            function handleMemberAction(e) {
+                const btn = e.target.closest('.member-btn');
+                if (!btn) return;
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                if (action === 'kick') {
+                    hostKickMember(id);
+                } else if (action === 'role') {
+                    const peer = collabPeers.find(p => (p.peerId || p.id) === id);
+                    if (peer) hostSetMemberRole(id, peer.role === 'spectator' ? 'guest' : 'spectator');
+                }
+            }
+
+            // 定期检查连接状态：双方都主动 ping，任一连接 10 秒无消息即视为掉线
+            function startWatchdog() {
+                if (watchdogTimer) clearInterval(watchdogTimer);
+                console.log('[协作] 心跳监测已启动（每 4 秒，10 秒超时判定）');
+                watchdogTimer = setInterval(watchdogTick, 4000);
+            }
+
+            function watchdogTick() {
+                if (!collabRole) return;
+                const now = Date.now();
+                const TIMEOUT = 10000;
+                const dead = [];
+                collabPeers.forEach(p => {
+                    try { p.send({ type: 'ping', t: now }); } catch (e) {}
+                    if (now - p.lastSeen > TIMEOUT) dead.push(p);
+                });
+                if (!dead.length) return;
+                console.warn('[协作] 检测到 ' + dead.length + ' 个连接超时，判定掉线');
+                dead.forEach(p => {
+                    try { p.conn.close(); } catch (e) {}
+                    collabRemovePeer(p);
+                });
+            }
+
+            function toggleMembers(open) {
+                const isOpen = (open !== undefined) ? open : !membersPanel.classList.contains('open');
+                membersPanel.classList.toggle('open', isOpen);
+                membersOverlay.classList.toggle('active', isOpen);
+            }
+
+            function restoreGuestData() {
+                if (preCollabData) {
+                    setData(preCollabData);
+                    preCollabData = null;
+                }
+            }
+
+            function renderMembersList(containerEl) {
+                if (!containerEl) return;
+                const members = remoteMembers || [];
+                if (!members.length) {
+                    containerEl.innerHTML = '<span class="members-empty">正在同步成员…</span>';
+                    return;
+                }
+                containerEl.innerHTML = members.map(m => {
+                    const roleLabel = m.role === 'host' ? '房主' : (m.role === 'spectator' ? '旁观' : '客端');
+                    const roleClass = m.role === 'host' ? 'host' : (m.role === 'spectator' ? 'spectator' : 'guest');
+                    const isMe = m.id === myPeerId;
+                    const canManage = collabRole === 'host' && !isMe;
+                    const latencyText = m.role === 'host' ? '—' : (m.latency > 0 ? m.latency + 'ms' : '测速中');
+                    return '<span class="member-chip">'
+                        + '<span class="member-info">'
+                        + '<span class="member-role ' + roleClass + '">' + roleLabel + '</span>'
+                        + '<span class="member-name">' + escapeHtml(m.name) + (isMe ? '（我）' : '') + '</span>'
+                        + '<span class="member-meta">' + latencyText + ' · ' + escapeHtml(formatRelativeTime(m.lastEdit)) + '</span>'
+                        + '</span>'
+                        + (canManage
+                            ? '<span class="member-actions">'
+                                + '<button class="member-btn" data-action="role" data-id="' + escapeHtml(m.id) + '">' + (m.role === 'spectator' ? '恢复' : '旁观') + '</button>'
+                                + '<button class="member-btn member-btn-danger" data-action="kick" data-id="' + escapeHtml(m.id) + '">踢出</button>'
+                              + '</span>'
+                            : '')
+                        + '</span>';
+                }).join('');
+            }
+
+            function renderCollabBar() {
+                const bar = document.getElementById('collabBar');
+                if (!bar) return;
+                if (!collabRole) {
+                    bar.style.display = 'none';
+                    toggleMembers(false);
+                    return;
+                }
+                bar.style.display = 'flex';
+                document.getElementById('collabBarCode').textContent = roomCode || '—';
+                const copyBtn = document.getElementById('collabBarCodeCopy');
+                if (copyBtn) copyBtn.style.display = roomCode ? 'inline-flex' : 'none';
+                const members = remoteMembers || [];
+                document.getElementById('collabBarCount').textContent = members.length + ' 人';
+                const countEl = document.getElementById('membersCount');
+                if (countEl) countEl.textContent = members.length;
+                renderMembersList(document.getElementById('membersBody'));
+            }
+
+            // ================================================================
+            //  协作侧边栏（桌面端常驻）
+            // ================================================================
+            function renderCollabSidebar() {
+                const idle = document.getElementById('sbIdlePane');
+                const conn = document.getElementById('sbConnectedPane');
+                if (idle) idle.style.display = collabRole ? 'none' : 'flex';
+                if (conn) conn.style.display = collabRole ? 'flex' : 'none';
+
+                const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                set('sbRoleText', collabRole === 'host' ? '房主' : (collabRole === 'guest' ? (collabSpectator ? '旁观' : '客端') : '未连接'));
+                set('sbCodeText', roomCode || '—');
+                set('sbPeerCount', (remoteMembers && remoteMembers.length) || 0);
+
+                const codeRow = document.getElementById('sbFastCodeRow');
+                if (codeRow) {
+                    codeRow.style.display = roomCode ? 'flex' : 'none';
+                    const d = document.getElementById('sbFastCodeDisplay');
+                    if (d) d.textContent = roomCode || '—';
+                }
+                renderMembersList(document.getElementById('sbMembersBody'));
+                renderChatMessages();
+            }
+
+            function openCollabSidebar() {
+                if (!collabSidebar) return;
+                collabSidebar.classList.add('open');
+                appEl.classList.add('collab-open');
+                renderCollabSidebar();
+                markChatRead();
+            }
+
+            function closeCollabSidebar() {
+                if (!collabSidebar) return;
+                collabSidebar.classList.remove('open');
+                appEl.classList.remove('collab-open');
+            }
+
+            // ---- 连接进行中：禁用创建/加入按钮并显示加载文字，防止重复点击 ----
+            function setBtnLoading(btn, loading, label, loadingLabel) {
+                if (!btn) return;
+                btn.disabled = loading;
+                btn.textContent = loading ? loadingLabel : label;
+            }
+
+            function setConnecting(action) {
+                collabConnecting = action;
+                const isCreate = action === 'create';
+                const isJoin = action === 'join';
+                setBtnLoading(sbFastCreateBtn, isCreate, '创建房间', '创建中…');
+                setBtnLoading(fastCreateBtn, isCreate, '创建房间', '创建中…');
+                setBtnLoading(sbFastJoinBtn, isJoin, '加入', '加入中…');
+                setBtnLoading(fastJoinBtn, isJoin, '加入', '加入中…');
+            }
+
+            function clearConnecting() {
+                setConnecting(false);
+            }
+
+            const collabBtn = document.getElementById('collabBtn');
+            const collabModal = document.getElementById('collabModal');
+            const collabTabFast = document.getElementById('collabTabFast');
+            const collabTabManual = document.getElementById('collabTabManual');
+            const collabPaneFast = document.getElementById('collabPaneFast');
+            const collabPaneManual = document.getElementById('collabPaneManual');
+            const fastCreateBtn = document.getElementById('fastCreateBtn');
+            const fastJoinBtn = document.getElementById('fastJoinBtn');
+            const fastCodeInput = document.getElementById('fastCodeInput');
+            const fastCodeRow = document.getElementById('fastCodeRow');
+            const fastCodeDisplay = document.getElementById('fastCodeDisplay');
+            const fastCodeCopy = document.getElementById('fastCodeCopy');
+            const manualCreateBtn = document.getElementById('manualCreateBtn');
+            const manualInvite = document.getElementById('manualInvite');
+            const manualInviteCopy = document.getElementById('manualInviteCopy');
+            const manualInvitePaste = document.getElementById('manualInvitePaste');
+            const manualJoinBtn = document.getElementById('manualJoinBtn');
+            const manualReply = document.getElementById('manualReply');
+            const manualReplyCopy = document.getElementById('manualReplyCopy');
+            const manualReplyPaste = document.getElementById('manualReplyPaste');
+            const manualApplyBtn = document.getElementById('manualApplyBtn');
+            const collabDisconnectBtn = document.getElementById('collabDisconnectBtn');
+            const collabCloseBtn = document.getElementById('collabCloseBtn');
+            const nicknameInput = document.getElementById('nicknameInput');
+            const membersPanel = document.getElementById('membersPanel');
+            const membersOverlay = document.getElementById('membersOverlay');
+            const membersBody = document.getElementById('membersBody');
+            const membersCount = document.getElementById('membersCount');
+            const membersClose = document.getElementById('membersClose');
+            const membersTabMembers = document.getElementById('membersTabMembers');
+            const membersTabChat = document.getElementById('membersTabChat');
+            const membersChatBody = document.getElementById('membersChatBody');
+            const mobileChatList = document.getElementById('mobileChatList');
+            const mobileChatInput = document.getElementById('mobileChatInput');
+            const mobileChatSendBtn = document.getElementById('mobileChatSendBtn');
+            const chatToggleMobile = document.getElementById('chatToggleMobile');
+            const collabBarMembersBtn = document.getElementById('collabBarMembersBtn');
+            const collabBarCodeCopy = document.getElementById('collabBarCodeCopy');
+            const collabDesktopMq = window.matchMedia('(min-width: 820px)');
+            const collabSidebar = document.getElementById('collabSidebar');
+            const sbClose = document.getElementById('sbClose');
+            const sbIdlePane = document.getElementById('sbIdlePane');
+            const sbConnectedPane = document.getElementById('sbConnectedPane');
+            const sbNicknameInput = document.getElementById('sbNicknameInput');
+            const sbTabFast = document.getElementById('sbTabFast');
+            const sbTabManual = document.getElementById('sbTabManual');
+            const sbPaneFast = document.getElementById('sbPaneFast');
+            const sbPaneManual = document.getElementById('sbPaneManual');
+            const sbFastCreateBtn = document.getElementById('sbFastCreateBtn');
+            const sbFastJoinBtn = document.getElementById('sbFastJoinBtn');
+            const sbFastCodeInput = document.getElementById('sbFastCodeInput');
+            const sbFastCodeRow = document.getElementById('sbFastCodeRow');
+            const sbFastCodeDisplay = document.getElementById('sbFastCodeDisplay');
+            const sbFastCodeCopy = document.getElementById('sbFastCodeCopy');
+            const sbManualCreateBtn = document.getElementById('sbManualCreateBtn');
+            const sbManualInvite = document.getElementById('sbManualInvite');
+            const sbManualInviteCopy = document.getElementById('sbManualInviteCopy');
+            const sbManualInvitePaste = document.getElementById('sbManualInvitePaste');
+            const sbManualJoinBtn = document.getElementById('sbManualJoinBtn');
+            const sbManualReply = document.getElementById('sbManualReply');
+            const sbManualReplyCopy = document.getElementById('sbManualReplyCopy');
+            const sbManualReplyPaste = document.getElementById('sbManualReplyPaste');
+            const sbManualApplyBtn = document.getElementById('sbManualApplyBtn');
+            const sbCodeCopy = document.getElementById('sbCodeCopy');
+            const sbMembersBody = document.getElementById('sbMembersBody');
+            const sbChatList = document.getElementById('sbChatList');
+            const sbChatInput = document.getElementById('sbChatInput');
+            const sbChatSendBtn = document.getElementById('sbChatSendBtn');
+            const sbDisconnectBtn = document.getElementById('sbDisconnectBtn');
+
+            collabBtn.addEventListener('click', () => {
+                if (collabDesktopMq.matches) {
+                    if (collabSidebar.classList.contains('open')) {
+                        closeCollabSidebar();
+                    } else {
+                        if (sbNicknameInput) sbNicknameInput.value = myName;
+                        openCollabSidebar();
+                    }
+                } else {
+                    if (nicknameInput) nicknameInput.value = myName;
+                    collabRenderStatus();
+                    openModal(collabModal);
+                }
+            });
+            collabCloseBtn.addEventListener('click', () => closeModal(collabModal));
+            collabModal.addEventListener('click', (e) => { if (e.target === collabModal) closeModal(collabModal); });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal(collabModal);
+            });
+
+            function collabSwitchMode(mode) {
+                const isFast = mode === 'fast';
+                collabTabFast.classList.toggle('active', isFast);
+                collabTabManual.classList.toggle('active', !isFast);
+                collabPaneFast.style.display = isFast ? 'flex' : 'none';
+                collabPaneManual.style.display = isFast ? 'none' : 'flex';
+            }
+            collabTabFast.addEventListener('click', () => collabSwitchMode('fast'));
+            collabTabManual.addEventListener('click', () => collabSwitchMode('manual'));
+
+            fastCreateBtn.addEventListener('click', () => { readNickname(); setConnecting('create'); fastCreateRoom(); });
+            fastJoinBtn.addEventListener('click', () => { readNickname(); setConnecting('join'); fastJoinRoom(fastCodeInput.value); });
+            fastCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { readNickname(); setConnecting('join'); fastJoinRoom(fastCodeInput.value); } });
+
+            manualCreateBtn.addEventListener('click', async () => {
+                readNickname();
+                const invite = await manualCreateRoom();
+                if (invite) { collabFillAndSelect(manualInvite, invite); showToast('邀请码已生成，请复制发给对方'); }
+            });
+            manualInviteCopy.addEventListener('click', () => collabCopyText(manualInvite.value, '邀请码'));
+            manualJoinBtn.addEventListener('click', async () => {
+                readNickname();
+                const invite = manualInvitePaste.value.trim();
+                if (!invite) { showToast('请先粘贴邀请码'); return; }
+                const reply = await manualJoinRoom(invite);
+                if (reply) { collabFillAndSelect(manualReply, reply); showToast('回执码已生成，请复制发回给房主'); }
+            });
+            manualReplyCopy.addEventListener('click', () => collabCopyText(manualReply.value, '回执码'));
+            manualApplyBtn.addEventListener('click', () => manualApplyReply(manualReplyPaste.value.trim()));
+
+            collabDisconnectBtn.addEventListener('click', collabDisconnect);
+
+            collabBarMembersBtn.addEventListener('click', () => toggleMembers());
+            collabBarCodeCopy.addEventListener('click', () => collabCopyText(roomCode, '房间码'));
+            fastCodeCopy.addEventListener('click', () => collabCopyText(roomCode, '房间号'));
+            membersClose.addEventListener('click', () => toggleMembers(false));
+            membersOverlay.addEventListener('click', () => toggleMembers(false));
+            membersBody.addEventListener('click', handleMemberAction);
+
+            // ---- 成员抽屉「成员/聊天」标签切换 ----
+            function switchMembersTab(tab) {
+                const isChat = tab === 'chat';
+                membersTabMembers.classList.toggle('active', !isChat);
+                membersTabChat.classList.toggle('active', isChat);
+                membersBody.style.display = isChat ? 'none' : 'flex';
+                membersChatBody.style.display = isChat ? 'flex' : 'none';
+                if (isChat) {
+                    renderChatMessages();
+                    markChatRead();
+                }
+            }
+            membersTabMembers.addEventListener('click', () => switchMembersTab('members'));
+            membersTabChat.addEventListener('click', () => switchMembersTab('chat'));
+            mobileChatSendBtn.addEventListener('click', () => {
+                collabSendChat(mobileChatInput.value);
+                mobileChatInput.value = '';
+            });
+            mobileChatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    collabSendChat(mobileChatInput.value);
+                    mobileChatInput.value = '';
+                }
+            });
+            chatToggleMobile.addEventListener('click', () => {
+                if (!collabRole) return;
+                toggleMembers(true);
+                switchMembersTab('chat');  // 内部已含 markChatRead
+            });
+
+            // ---- 协作侧边栏事件 ----
+            function collabSwitchSidebarMode(mode) {
+                const isFast = mode === 'fast';
+                sbTabFast.classList.toggle('active', isFast);
+                sbTabManual.classList.toggle('active', !isFast);
+                sbPaneFast.style.display = isFast ? 'flex' : 'none';
+                sbPaneManual.style.display = isFast ? 'none' : 'flex';
+            }
+            sbClose.addEventListener('click', closeCollabSidebar);
+            sbDisconnectBtn.addEventListener('click', collabDisconnect);
+            sbCodeCopy.addEventListener('click', () => collabCopyText(roomCode, '房间码'));
+            sbFastCodeCopy.addEventListener('click', () => collabCopyText(roomCode, '房间号'));
+            sbMembersBody.addEventListener('click', handleMemberAction);
+            sbTabFast.addEventListener('click', () => collabSwitchSidebarMode('fast'));
+            sbTabManual.addEventListener('click', () => collabSwitchSidebarMode('manual'));
+            sbFastCreateBtn.addEventListener('click', () => { readNickname(); setConnecting('create'); fastCreateRoom(); });
+            sbFastJoinBtn.addEventListener('click', () => { readNickname(); setConnecting('join'); fastJoinRoom(sbFastCodeInput.value); });
+            sbFastCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { readNickname(); setConnecting('join'); fastJoinRoom(sbFastCodeInput.value); } });
+            sbManualCreateBtn.addEventListener('click', async () => {
+                readNickname();
+                const invite = await manualCreateRoom();
+                if (invite) { collabFillAndSelect(sbManualInvite, invite); showToast('邀请码已生成，请复制发给对方'); }
+            });
+            sbManualInviteCopy.addEventListener('click', () => collabCopyText(sbManualInvite.value, '邀请码'));
+            sbManualJoinBtn.addEventListener('click', async () => {
+                readNickname();
+                const invite = sbManualInvitePaste.value.trim();
+                if (!invite) { showToast('请先粘贴邀请码'); return; }
+                const reply = await manualJoinRoom(invite);
+                if (reply) { collabFillAndSelect(sbManualReply, reply); showToast('回执码已生成，请复制发回给房主'); }
+            });
+            sbManualReplyCopy.addEventListener('click', () => collabCopyText(sbManualReply.value, '回执码'));
+            sbManualApplyBtn.addEventListener('click', () => manualApplyReply(sbManualReplyPaste.value.trim()));
+            sbChatSendBtn.addEventListener('click', () => {
+                collabSendChat(sbChatInput.value);
+                sbChatInput.value = '';
+            });
+            sbChatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    collabSendChat(sbChatInput.value);
+                    sbChatInput.value = '';
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    toggleMembers(false);
+                    closeCollabSidebar();
+                }
+            });
+
+            if (nicknameInput) nicknameInput.value = myName;
+            startWatchdog();
+            collabRenderStatus();
+
+            // ================================================================
+            //  初始化
+            // ================================================================
+
+            function init() {
+                const hasStorage = loadFromStorage();
+                if (!hasStorage) {
+                    state.sections = [{
+                        id: generateId(),
+                        type: DEFAULT_TYPE,
+                        content: '',
+                    }];
+                    inspirationText.value = '';
+                    renderSections();
+                    updateStats();
+                    updateInspirationStatus('saved', '已保存');
+                    const emptyData = getDataString();
+                    localStorage.setItem(STORAGE_KEY, emptyData);
+                    lastSavedData = emptyData;
+                    setStatus('saved', '已保存');
+                } else {
+                    setStatus('saved', '已保存');
+                    setTimeout(() => {
+                        bindAutoResize();
+                    }, 100);
+                }
+                inspirationPanel.classList.remove('open');
+                inspirationOverlay.classList.remove('active');
+                appEl.classList.remove('inspiration-open');
+                isInspirationOpen = false;
+                toggleIconDesktop.textContent = '▶';
+            }
+
+            init();
+
+            window.__lyricsApp = { getData, setData, saveToStorage, exportLyricsFile, importFromFile, importFromText,
+                clearAll, addSection };
+        })();
+    </script>
+
+</body>
+</html>

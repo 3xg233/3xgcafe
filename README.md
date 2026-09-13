@@ -2,27 +2,42 @@
 
 由 bilibili@3xg233 制作的一些实用工具与网页的集合（部分借助 AI 构建）。
 
-本仓库包含以下**相互独立**的项目：
+本仓库按**版本线**组织为两个目录：
 
-## 桌面工具（C# / .NET 9 / WPF，仅 Windows）
-- **[MiniMonitor](MiniMonitor/)** —— 桌面悬浮性能监控器，常驻显示 CPU / 内存 / 磁盘 / 温度等指标。
-  - 用户说明：[MiniMonitor/README.md](MiniMonitor/README.md) ｜ 维护手册：[MiniMonitor/MAINTENANCE.md](MiniMonitor/MAINTENANCE.md)
-- **[SpotlightLauncher](SpotlightLauncher/)** —— 类 macOS 聚焦的启动器，支持应用检索与剪贴板历史。
-  - 用户说明：[SpotlightLauncher/README.md](SpotlightLauncher/README.md) ｜ 维护手册：[SpotlightLauncher/MAINTENANCE.md](SpotlightLauncher/MAINTENANCE.md)
-- **[WallpaperPure](WallpaperPure/)** —— 一键隐藏/显示桌面图标的悬浮按钮（带淡入淡出过渡），方便纯净观赏壁纸。
-  - 用户说明：[WallpaperPure/README.md](WallpaperPure/README.md) ｜ 维护手册：[WallpaperPure/MAINTENANCE.md](WallpaperPure/MAINTENANCE.md)
-- **[ScreenGuard](ScreenGuard/)** —— 空闲自动锁定：无操作达到设定时长即全屏锁定，需密码解锁，期间封锁键鼠但不影响后台运行。
-  - 用户说明：[ScreenGuard/README.md](ScreenGuard/README.md) ｜ 维护手册：[ScreenGuard/MAINTENANCE.md](ScreenGuard/MAINTENANCE.md)
-- **[3xgcafeConsole](3xgcafeConsole/)** —— 统一管理面板：集中查看状态、启动/停止/重启以上工具，管理开机自启，并可通过状态通道下发指令。
-  - 用户说明：[3xgcafeConsole/README.md](3xgcafeConsole/README.md) ｜ 维护手册：[3xgcafeConsole/MAINTENANCE.md](3xgcafeConsole/MAINTENANCE.md)
+---
 
-## 网页工具（纯前端）
-- **[歌词写作工具 lyrics](lyrics/)** —— 面向音乐人的纯前端作词辅助工具（稳定版 + 实时协作 Beta 版）。
-  - 说明：[lyrics/README.md](lyrics/README.md)
+## [Current version](Current%20version/) —— 现行版（v2.0）
+
+统一命名为 `3xgcafe` 系列（显示名 `3xgcafe <功能名>`，程序集 `3xgcafe-<功能名>.exe`），各工具相互独立、可单独构建发布。
+
+| 工具 | 说明 | 用户说明 | 维护手册 |
+|------|------|----------|----------|
+| **[3xgcafe Monitor](Current%20version/MiniMonitor/)** | 桌面悬浮性能监控器（CPU / 内存 / 磁盘 / 温度 / 电池 / 网速） | [README](Current%20version/MiniMonitor/README.md) | [MAINTENANCE](Current%20version/MiniMonitor/MAINTENANCE.md) |
+| **[3xgcafe Spotlight](Current%20version/SpotlightLauncher/)** | 聚焦式应用启动器（含剪贴板历史） | [README](Current%20version/SpotlightLauncher/README.md) | [MAINTENANCE](Current%20version/SpotlightLauncher/MAINTENANCE.md) |
+| **[3xgcafe Wallpaper](Current%20version/WallpaperPure/)** | 一键隐藏 / 显示桌面图标的悬浮按钮 | [README](Current%20version/WallpaperPure/README.md) | [MAINTENANCE](Current%20version/WallpaperPure/MAINTENANCE.md) |
+| **[3xgcafe Guard](Current%20version/ScreenGuard/)** | 空闲自动锁定屏幕（毛玻璃锁屏 + 密码解锁） | [README](Current%20version/ScreenGuard/README.md) | [MAINTENANCE](Current%20version/ScreenGuard/MAINTENANCE.md) |
+| **[3xgcafe Console](Current%20version/3xgcafeConsole/)** | 统一管理面板：启停 / 自启 / 实时状态（命名管道通道） | [README](Current%20version/3xgcafeConsole/README.md) | [MAINTENANCE](Current%20version/3xgcafeConsole/MAINTENANCE.md) |
+
+网页工具（纯前端）：**[lyrics](Current%20version/lyrics/)** —— 面向音乐人的作词辅助工具（稳定版 + 实时协作 Beta 版）。
+
+---
+
+## [legacy](legacy/) —— Console 建立之前的版本线
+
+作为历史归档保留，不再更新。含 MiniMonitor、SpotlightLauncher（已并入 [HydrargyrumLe](https://github.com/HydrargyrumLe) 的改良版）、WallpaperPure 与 lyrics。
+
+---
+
+## 贡献者
+
+- **3xgcafe** 由 bilibili@3xg233 创建并维护。
+- **[HydrargyrumLe](https://github.com/HydrargyrumLe)** 为 MiniMonitor 与 SpotlightLauncher 贡献了改良版本（现分别收录于 3xgcafe Monitor 与 3xgcafe Spotlight）。
 
 ## 许可证
+
 本仓库整体采用 [GPL-3.0](LICENSE)。
 
 ## 下载
-- 桌面工具的便携版（exe / zip，单文件超过 100MB）请到 **[Releases](https://github.com/3xg233/3xgcafe/releases)** 页面获取。
+
+- 桌面工具的**便携版**（单文件 exe 超过 100MB，不入库）请到 **[Releases](https://github.com/3xg233/3xgcafe/releases)** 页面获取。
 - 网页工具直接打开 `lyrics/` 下对应的 HTML 文件即可，无需安装。
