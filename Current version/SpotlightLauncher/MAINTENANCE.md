@@ -207,7 +207,7 @@ dotnet publish -c Release -r win-x64 --self-contained true \
 
 - **通道名**：命名管道 `3xgcafe-Spotlight`；一请求一连接的 JSON 行协议。
 - **实现**：`Ipc/ToolIpcServer.cs` + `App.xaml.cs` 的 `HandleIpc`。
-- **指令**：`status` / `show` / `quit`。
+- **指令**：`status` / `show` / `settings` / `quit`（`settings` —— 打开扫描路径管理对话框）。
 - **`status` 的 `data` 字段**：`indexed` / `indexReady` / `clipboard` / `autostart`。
 - **响应格式**：`{"ok":bool,"state":"running|paused|locked|stopping|error","detail":"...","ver":1,"data":{...}}`。
 - **消费方**：3xgcafeConsole 统一管理面板。

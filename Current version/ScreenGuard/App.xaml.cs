@@ -19,6 +19,7 @@ public partial class App : Application
     private IdleMonitor? _idle;
     private InputBlocker? _blocker;
     private LockWindow? _lockWindow;
+    private PowerMonitor? _power;
     private int _tickCounter;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -64,11 +65,24 @@ public partial class App : Application
 
         UpdateTrayTooltip();
 
-        // 3xgcafe Console 管理通道（命名管道 3xgcafe-ScreenGuard）
+        // 电源 / 显示状态监听：睡眠或息屏时自动解除防护，
+        // 避免唤醒后本工具的锁屏窗压住 Windows 自己的登录界面
+        _power = new PowerMonitor();
+        _power.Suspending += () => Dispatcher.BeginInvoke(new Action(ReleaseProtectionOnPowerOff));
+        _power.Resumed += () => Dispatcher.BeginInvoke(new Action(ResetIdleAfterPowerEvent));
+        _power.DisplayStateChanged += lit => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (lit)
+                ResetIdleAfterPowerEvent();
+            else
+                ReleaseProtectionOnPowerOff();
+        }));
+
+        // 3xgcafe Console 管理通道（命名管道 3xgcafe-Guard）
         _ipc = new ToolIpcServer("Guard", HandleIpc);
     }
 
-    /// <summary>管理面板指令：status / lock / pause / resume / quit。</summary>
+    /// <summary>管理面板指令：status / lock / pause / resume / settings / quit。</summary>
     private string HandleIpc(string cmd, IReadOnlyDictionary<string, string> args)
     {
         switch (cmd)
@@ -100,6 +114,10 @@ public partial class App : Application
                 Dispatcher.BeginInvoke(new Action(LockNow));
                 return ToolIpc.Response(true, "running", "已发起立即锁定", null);
 
+            case "settings":
+                Dispatcher.BeginInvoke(new Action(OpenSettings));
+                return ToolIpc.Response(true, "running", "已打开设置窗口", null);
+
             case "pause":
             {
                 int minutes = ToolIpc.TryGetInt(args, "minutes", out int m) ? Math.Clamp(m, 1, 480) : 30;
@@ -123,6 +141,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _ipc?.Dispose();
+        _power?.Dispose();
         _blocker?.Stop();
         _blocker?.Dispose();
         _idle?.Dispose();
@@ -172,6 +191,32 @@ public partial class App : Application
         }
 
         _idle?.Restart();
+        UpdateTrayTooltip();
+    }
+
+    // ---------------- 电源 / 显示状态事件 ----------------
+
+    /// <summary>
+    /// 系统即将睡眠（挂起）或显示器关闭时调用：解除屏幕防护。
+    /// 否则唤醒后本工具的锁屏窗会压住 Windows 自己的登录界面，导致无法用正常方式输入密码。
+    /// 若此刻处于锁定状态则静默解锁（不走密码校验），并把空闲计时基准重置到当前时刻。
+    /// </summary>
+    private void ReleaseProtectionOnPowerOff()
+    {
+        if (_lockWindow != null)
+            OnUnlocked();
+
+        _idle?.ResetBaseline();
+        UpdateTrayTooltip();
+    }
+
+    /// <summary>
+    /// 系统唤醒或显示器点亮后调用：防护照常生效，但空闲计时从此刻重新开始
+    /// （睡眠期间系统空闲会虚高，不重置会在唤醒瞬间立刻再次锁定）。
+    /// </summary>
+    private void ResetIdleAfterPowerEvent()
+    {
+        _idle?.ResetBaseline();
         UpdateTrayTooltip();
     }
 

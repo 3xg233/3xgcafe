@@ -73,7 +73,7 @@ public partial class App : System.Windows.Application
         _ipc = new ToolIpcServer("Spotlight", HandleIpc);
     }
 
-    /// <summary>管理面板指令：status / show / quit。</summary>
+    /// <summary>管理面板指令：status / show / settings / quit。</summary>
     private string HandleIpc(string cmd, IReadOnlyDictionary<string, string> args)
     {
         switch (cmd)
@@ -99,6 +99,10 @@ public partial class App : System.Windows.Application
             case "show":
                 Dispatcher.BeginInvoke(new Action(() => _main?.ShowLauncher()));
                 return ToolIpc.Response(true, "running", "已唤起启动器", null);
+
+            case "settings":
+                Dispatcher.BeginInvoke(new Action(() => _main?.OpenSettingsDialog()));
+                return ToolIpc.Response(true, "running", "已打开扫描路径设置", null);
 
             case "quit":
                 Dispatcher.BeginInvoke(new Action(ExitApp));

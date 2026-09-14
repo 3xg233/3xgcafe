@@ -54,6 +54,12 @@
 - **可选保持屏幕常亮**：`SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)`，
   解锁时用 `SetThreadExecutionState(ES_CONTINUOUS)` 还原。默认关闭，避免干扰系统电源策略。
 
+- **电源 / 显示状态适配**：`Native/PowerMonitor.cs` 用一个不可见消息窗口接收 `WM_POWERBROADCAST`，并注册 `GUID_CONSOLE_DISPLAY_STATE` 通知：
+  - **睡眠 / 息屏**（`PBT_APMSUSPEND`，或显示器状态变为关闭 / 变暗）→ 自动**解除屏幕防护**：处于锁定态时静默解锁（停用输入封锁 + 关闭锁屏窗），随后重置空闲计时基准。
+  - **唤醒 / 亮屏**（`PBT_APMRESUMEAUTOMATIC` / `PBT_APMRESUMESUSPEND`，或显示器点亮）→ 防护照常生效，同样重置空闲计时基准。
+  - **为什么要 `ResetBaseline()`**：睡眠期间 `GetLastInputInfo` 的 `dwTime` 不更新，唤醒后系统空闲会"虚高"（等于睡眠时长 + 之前的空闲），不重置会在唤醒瞬间立刻再次锁定。该方法把空闲时长截断为「自基准时刻以来的时长」，让计时从唤醒那一刻重新开始。
+  - **动机**：睡眠唤醒后 Windows 自己会要求登录，若不解除防护，本工具的锁屏窗会压住系统登录界面，导致无法输入开机密码。
+
 ## 已知限制
 
 1. **`Ctrl+Alt+Del` 无法拦截**：SAS 由 winlogon 在安全桌面处理，用户态钩子不生效。
@@ -114,6 +120,14 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 `Stop-Process -Name 3xgcafe-Guard -Force`（PowerShell）。Git Bash 下 `taskkill //IM` 会报"无效参数"。
 
 绿色版统一覆盖到 `C:\Users\qq318\Desktop\3xgcafe\`。
+
+## 3xgcafe Console 状态通道（IPC）
+
+- **通道名**：命名管道 `3xgcafe-Guard`；一请求一连接的 JSON 行协议。
+- **指令**：`status` / `lock` / `pause` / `resume` / `settings` / `quit`
+  - `settings` —— 打开本工具的设置窗口（锁定时间 / 锁屏背景 / 密码 / 提示语）。
+- **`status` 的 `data` 字段**：`locked` / `paused` / `autostart`。
+- 面板侧对应卡片上的「立即锁定 / 暂停 30 分 / 恢复监控 / 设置」按钮。
 
 ## 命名与隔离（v2.0）
 

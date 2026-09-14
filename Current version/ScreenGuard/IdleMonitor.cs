@@ -13,6 +13,7 @@ internal sealed class IdleMonitor : IDisposable
 {
     private readonly DispatcherTimer _timer;
     private DateTime _pauseUntil = DateTime.MinValue;
+    private DateTime? _idleBaseline;
     private bool _triggered;
 
     public IdleMonitor()
@@ -60,8 +61,20 @@ internal sealed class IdleMonitor : IDisposable
     public void Restart()
     {
         _triggered = false;
+        _idleBaseline = null;
         IdleTime = GetIdleTime();
         _timer.Start();
+    }
+
+    /// <summary>
+    /// 重置空闲计时基准：此后空闲时长最多只算到"此刻"，不再累计基准之前的时长。
+    /// 用于系统睡眠 / 息屏之后 —— 这段期间 <c>GetLastInputInfo</c> 不更新，
+    /// 唤醒后系统空闲会虚高（等于睡眠时长 + 之前的空闲），不处理会在唤醒瞬间立刻锁定。
+    /// </summary>
+    public void ResetBaseline()
+    {
+        _idleBaseline = DateTime.Now;
+        _triggered = false;
     }
 
     public void Pause(TimeSpan duration)
@@ -79,6 +92,15 @@ internal sealed class IdleMonitor : IDisposable
     private void OnTick(object? sender, EventArgs e)
     {
         IdleTime = GetIdleTime();
+
+        // 有基准时把空闲时长截断为"自基准时刻以来的时长"，让计时从唤醒 / 亮屏那一刻重新开始
+        if (_idleBaseline is DateTime baseline)
+        {
+            TimeSpan sinceBaseline = DateTime.Now - baseline;
+            if (sinceBaseline < IdleTime)
+                IdleTime = sinceBaseline;
+        }
+
         Tick?.Invoke();
 
         if (_triggered || IsPaused)

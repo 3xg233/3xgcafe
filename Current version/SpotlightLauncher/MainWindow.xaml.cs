@@ -343,8 +343,18 @@ public partial class MainWindow : Window
 
     // ---------- 扫描路径管理对话框 ----------
 
-    private void OnAddPathClick(object sender, RoutedEventArgs e)
+    private void OnAddPathClick(object sender, RoutedEventArgs e) => OpenSettingsDialog();
+
+    /// <summary>
+    /// 打开扫描路径管理对话框（本工具唯一的设置界面）。
+    /// 同时供 3xgcafe Console 的「设置」按钮经 IPC（cmd=settings）调用。
+    /// </summary>
+    public void OpenSettingsDialog()
     {
+        // 对话框以主窗口为 Owner，主窗口隐藏时先呼出，避免定位异常
+        if (!IsVisible)
+            ShowLauncher();
+
         var dlg = new PathsDialog(_scanPaths) { Owner = this };
         _pathsDialogOpen = true;
         try

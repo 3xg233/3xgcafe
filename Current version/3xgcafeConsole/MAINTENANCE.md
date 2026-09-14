@@ -80,6 +80,13 @@ private string HandleIpc(string cmd, IReadOnlyDictionary<string, string> args)
 3. `App.OnExit` 里 `_ipc?.Dispose();`
 4. 面板 `tools.json` 加一条（或界面「添加工具」），`pipeName` = `3xgcafe-MyTool`。
 
+## 工具设置按钮（settings 指令）
+
+- 面板在每张工具卡片上渲染 `quickActions` 里的按钮，数据来源是 `%APPDATA%\3xgcafe\Console\tools.json`。
+- **约定**：若某工具自带设置界面，就实现 IPC 指令 `settings`（在 UI 线程打开其设置窗口），并在该工具的快速操作里加 `{ "label": "设置", "cmd": "settings" }`。
+- 目前支持：`Guard`（打开设置窗口）、`Spotlight`（打开扫描路径管理对话框）。
+- 内置工具的默认快捷操作会在加载配置时自动补齐（`ToolConfigStore.MergeBuiltInActions`，按 Id 匹配、只增不减），因此**老 `tools.json` 无需手动重建**就能出现新按钮；用户自行添加的工具不受影响。
+
 ## 关键坑
 
 0. **没有 `StartupUri` 就必须在 `OnStartup` 里手动 `new MainWindow()`**：

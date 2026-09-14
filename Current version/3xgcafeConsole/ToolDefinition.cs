@@ -98,6 +98,10 @@ public static class ToolConfigStore
                 {
                     foreach (ToolDefinition t in cfg.Tools)
                         Normalize(t);
+
+                    // 补齐内置工具后来新增的默认快捷操作（例如「设置」），
+                    // 老配置文件无需手工重建也能获得新按钮
+                    MergeBuiltInActions(cfg);
                     return cfg;
                 }
             }
@@ -135,6 +139,47 @@ public static class ToolConfigStore
         t.QuickActions ??= new List<ToolAction>();
     }
 
+    /// <summary>
+    /// 为内置工具补齐默认快捷操作（按 Id 匹配，只增不减）；用户自行添加的工具不受影响。
+    /// </summary>
+    private static void MergeBuiltInActions(ToolConfig cfg)
+    {
+        ToolConfig defaults = CreateDefault();
+
+        foreach (ToolDefinition tool in cfg.Tools)
+        {
+            if (!tool.BuiltIn)
+                continue;
+
+            ToolDefinition? def = null;
+            foreach (ToolDefinition d in defaults.Tools)
+            {
+                if (d.Id == tool.Id)
+                {
+                    def = d;
+                    break;
+                }
+            }
+            if (def == null)
+                continue;
+
+            foreach (ToolAction action in def.QuickActions)
+            {
+                bool exists = false;
+                foreach (ToolAction a in tool.QuickActions)
+                {
+                    if (a.Cmd == action.Cmd)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                    tool.QuickActions.Add(action);
+            }
+        }
+    }
+
     private static ToolDefinition Built(string id, string name, string subtitle, params ToolAction[] actions)
         => new()
         {
@@ -154,12 +199,15 @@ public static class ToolConfigStore
         {
             Built("Monitor", "3xgcafe Monitor", "桌面性能监控", new ToolAction { Label = "唤起", Cmd = "show" },
                 new ToolAction { Label = "置顶", Cmd = "toggle_topmost" }),
-            Built("Spotlight", "3xgcafe Spotlight", "启动器 / 剪贴板", new ToolAction { Label = "打开", Cmd = "show" }),
+            Built("Spotlight", "3xgcafe Spotlight", "启动器 / 剪贴板",
+                new ToolAction { Label = "打开", Cmd = "show" },
+                new ToolAction { Label = "设置", Cmd = "settings" }),
             Built("Wallpaper", "3xgcafe Wallpaper", "桌面图标显隐", new ToolAction { Label = "切换图标", Cmd = "toggle_icons" }),
             Built("Guard", "3xgcafe Guard", "空闲自动锁定",
                 new ToolAction { Label = "立即锁定", Cmd = "lock" },
                 new ToolAction { Label = "暂停 30 分", Cmd = "pause", Args = new Dictionary<string, string> { ["minutes"] = "30" } },
-                new ToolAction { Label = "恢复监控", Cmd = "resume" })
+                new ToolAction { Label = "恢复监控", Cmd = "resume" },
+                new ToolAction { Label = "设置", Cmd = "settings" })
         }
     };
 }
