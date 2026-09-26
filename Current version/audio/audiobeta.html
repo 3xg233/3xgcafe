@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>音频提取工具~3xgVCPhelper · V1.0 Developer Beta</title>
+    <style>
+        /* ========== 全局重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #121214;
+            --card-bg: #1c1c1e;
+            --surface: #262628;
+            --border: #2e2e32;
+            --text-primary: #eaeaec;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent: #1e3a8a;
+            --accent-hover: #2563eb;
+            --accent-light: #172554;
+            --danger: #991b1b;
+            --danger-hover: #7f1d1d;
+            --radius: 8px;
+            --radius-sm: 4px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'SF Mono', monospace;
+            --transition: 0.18s ease;
+            --btn-file: #2563eb;
+            --btn-file-hover: #3b82f6;
+            --btn-clip: #0d9488;
+            --btn-clip-hover: #14b8a6;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0b0b0c;
+            font-family: var(--font);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ========== 主容器 ========== */
+        .app {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+            padding: 16px 16px 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--card-bg);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ========== 头部 ========== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--bg);
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+        .logo .accent-block {
+            background: var(--accent-light);
+            color: var(--accent-hover);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 10px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+            white-space: nowrap;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 36px;
+        }
+        .btn:hover {
+            background: #333336;
+            border-color: #4a4a4e;
+            color: var(--text-primary);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .btn:disabled:hover {
+            background: var(--surface);
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-file {
+            background: var(--btn-file);
+            border-color: var(--btn-file);
+            color: #fff;
+        }
+        .btn-file:hover {
+            background: var(--btn-file-hover);
+            border-color: var(--btn-file-hover);
+            color: #fff;
+        }
+
+        .btn-clip {
+            background: var(--btn-clip);
+            border-color: var(--btn-clip);
+            color: #fff;
+        }
+        .btn-clip:hover {
+            background: var(--btn-clip-hover);
+            border-color: var(--btn-clip-hover);
+            color: #fff;
+        }
+
+        .btn-danger {
+            color: #fca5a5;
+            border-color: var(--danger);
+            background: transparent;
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            border-color: var(--danger-hover);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+            min-height: 30px;
+        }
+        .btn-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
+            margin: 0 2px;
+        }
+
+        /* ========== 内容滚动区 ========== */
+        .content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 2px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+        .content::-webkit-scrollbar-thumb:hover {
+            background: #555558;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            padding-bottom: 2px;
+        }
+        .section-header .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .section-header .header-left span {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+        }
+        .section-header .header-left small {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        /* ========== 拖放区 ========== */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            padding: 38px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag {
+            border-color: var(--accent-hover);
+            background: rgba(37, 99, 235, 0.06);
+            color: var(--text-secondary);
+        }
+        .drop-zone .dz-icon {
+            font-size: 38px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+        .drop-zone .dz-title {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .drop-zone .dz-hint {
+            font-size: 12px;
+        }
+
+        /* ========== 文件信息卡片 ========== */
+        .file-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeIn 0.25s ease;
+        }
+        .file-card .fc-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-card .fc-name .fc-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 3px;
+            background: rgba(13, 148, 136, 0.16);
+            color: var(--btn-clip-hover);
+            border: 1px solid rgba(13, 148, 136, 0.3);
+            flex-shrink: 0;
+        }
+        .file-card .fc-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .file-card .fc-meta .fc-item {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .file-card .fc-meta .fc-item label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .file-card .fc-meta .fc-item b {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ========== 选项组 ========== */
+        .opt-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .opt-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .seg {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .fmt-btn {
+            flex: 1;
+            min-width: 76px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 38px;
+        }
+        .fmt-btn:hover {
+            background: #333336;
+            border-color: #4a4a4e;
+            color: var(--text-primary);
+        }
+        .fmt-btn:active {
+            transform: scale(0.96);
+        }
+        .fmt-btn.active {
+            background: var(--accent);
+            border-color: var(--accent-hover);
+            color: #fff;
+        }
+        .fmt-btn small {
+            font-size: 10px;
+            opacity: 0.7;
+            font-weight: 400;
+        }
+
+        /* ========== 进度区 ========== */
+        .progress-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--card-bg);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            border-radius: 999px;
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .progress-text .pt-stage {
+            color: var(--text-muted);
+        }
+        .log {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            height: 110px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .log::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log::-webkit-scrollbar-thumb {
+            background: #3d3d40;
+            border-radius: 3px;
+        }
+
+        /* ========== 结果列表 ========== */
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.25s ease;
+        }
+        .result-item .ri-name {
+            flex: 1;
+            min-width: 120px;
+            font-size: 13px;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .result-item .ri-tag {
+            font-size: 11px;
+            padding: 1px 8px;
+            border-radius: 3px;
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--accent-hover);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+        .result-item .ri-size {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+        }
+        .result-item .ri-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 底部状态 ========== */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            padding-top: 8px;
+            border-top: 2px solid var(--bg);
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .stats {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .stats .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 12px;
+        }
+        .stats .stat-item .num {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            min-width: 14px;
+        }
+        .core-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .core-status .dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #6b7280;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .core-status .dot.loading {
+            background: #f59e0b;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+        .core-status .dot.ready {
+            background: #22c55e;
+        }
+        .core-status .dot.error {
+            background: #ef4444;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+        .footer-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        /* ========== 模态框 ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px 28px 20px;
+            max-width: 560px;
+            width: 92%;
+            max-height: 90vh;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+            transform: scale(0.94) translateY(12px);
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1) translateY(0);
+        }
+        .modal-box .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            flex-shrink: 0;
+        }
+        .modal-box .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .modal-box .modal-subtitle strong {
+            color: var(--text-primary);
+        }
+        .modal-box .modal-subtitle .code {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 1px 6px;
+            border-radius: 3px;
+            color: var(--text-secondary);
+        }
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .modal-box .modal-actions .btn {
+            min-width: 72px;
+            justify-content: center;
+            font-size: 14px;
+            padding: 6px 18px;
+            min-height: 36px;
+        }
+        .modal-box .about-body {
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-box .about-body ul {
+            padding-left: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .modal-box .about-body ul li b {
+            color: var(--text-primary);
+        }
+        .modal-box .about-body .about-note {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            line-height: 1.6;
+        }
+
+        /* ========== 隐藏文件输入 ========== */
+        .file-input-hidden {
+            display: none;
+        }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #262628;
+            color: #f0f0f0;
+            padding: 8px 22px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 300;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            border: 1px solid var(--border);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========== 桌面端样式 (≥ 820px) ========== */
+        @media (min-width: 820px) {
+            .app {
+                padding: 20px 32px 18px 32px;
+                gap: 12px;
+            }
+            .header {
+                padding-bottom: 10px;
+                flex-wrap: nowrap;
+            }
+            .logo {
+                font-size: 22px;
+            }
+            .logo .accent-block {
+                font-size: 17px;
+                padding: 4px 12px;
+            }
+            .btn {
+                padding: 8px 20px;
+                font-size: 15px;
+                min-height: auto;
+            }
+            .btn-sm {
+                padding: 5px 14px;
+                font-size: 13px;
+                min-height: auto;
+            }
+            .drop-zone {
+                padding: 52px 20px;
+            }
+            .drop-zone .dz-icon {
+                font-size: 46px;
+            }
+            .drop-zone .dz-title {
+                font-size: 17px;
+            }
+            .section-header {
+                font-size: 14px;
+            }
+            .section-header .header-left span {
+                font-size: 14px;
+            }
+            .file-card {
+                padding: 16px 20px;
+            }
+            .file-card .fc-name {
+                font-size: 15px;
+            }
+            .fmt-btn {
+                font-size: 14px;
+                padding: 10px 12px;
+                min-height: 42px;
+            }
+            .footer {
+                font-size: 14px;
+                padding-top: 10px;
+            }
+            .stats .stat-item {
+                font-size: 14px;
+            }
+            .core-status {
+                font-size: 13px;
+            }
+            .footer-hint {
+                font-size: 13px;
+                display: block;
+            }
+            .modal-box {
+                max-width: 600px;
+                padding: 28px 32px 24px;
+            }
+            .modal-box .modal-title {
+                font-size: 20px;
+            }
+            .modal-box .modal-subtitle {
+                font-size: 14px;
+            }
+            .log {
+                height: 130px;
+            }
+        }
+
+        /* ========== 平板/中等屏幕 (560px ~ 819px) ========== */
+        @media (max-width: 819px) and (min-width: 560px) {
+            .app {
+                padding: 16px 20px 14px 20px;
+            }
+            .logo {
+                font-size: 19px;
+            }
+            .logo .accent-block {
+                font-size: 15px;
+                padding: 3px 10px;
+            }
+            .btn {
+                font-size: 13px;
+                padding: 6px 16px;
+                min-height: 34px;
+            }
+            .btn-sm {
+                font-size: 12px;
+                padding: 4px 12px;
+                min-height: 30px;
+            }
+            .drop-zone .dz-icon {
+                font-size: 40px;
+            }
+            .footer {
+                font-size: 13px;
+            }
+            .footer-hint {
+                font-size: 12px;
+            }
+        }
+
+        /* ========== 手机端 (< 560px) ========== */
+        @media (max-width: 559px) {
+            .app {
+                padding: 10px 10px 8px 10px;
+                gap: 8px;
+            }
+            .header {
+                padding-bottom: 6px;
+                gap: 4px;
+            }
+            .logo {
+                font-size: 15px;
+                gap: 6px;
+            }
+            .logo .accent-block {
+                font-size: 12px;
+                padding: 2px 8px;
+            }
+            .header-actions {
+                gap: 3px;
+            }
+            .btn {
+                font-size: 11px;
+                padding: 4px 8px;
+                min-height: 28px;
+                gap: 2px;
+            }
+            .btn-sm {
+                font-size: 10px;
+                padding: 3px 6px;
+                min-height: 24px;
+            }
+            .btn-divider {
+                height: 20px;
+                margin: 0 1px;
+            }
+            .content {
+                gap: 10px;
+            }
+            .drop-zone {
+                padding: 28px 14px;
+            }
+            .drop-zone .dz-icon {
+                font-size: 32px;
+            }
+            .drop-zone .dz-title {
+                font-size: 14px;
+            }
+            .drop-zone .dz-hint {
+                font-size: 11px;
+            }
+            .file-card {
+                padding: 12px 14px;
+            }
+            .file-card .fc-name {
+                font-size: 13px;
+            }
+            .file-card .fc-meta {
+                gap: 12px;
+            }
+            .section-header {
+                font-size: 12px;
+            }
+            .section-header .header-left span {
+                font-size: 12px;
+            }
+            .section-header .header-left small {
+                font-size: 10px;
+            }
+            .opt-label {
+                font-size: 10px;
+            }
+            .fmt-btn {
+                font-size: 12px;
+                padding: 7px 6px;
+                min-height: 34px;
+                min-width: 64px;
+            }
+            .fmt-btn small {
+                font-size: 9px;
+            }
+            .progress-text {
+                font-size: 11px;
+            }
+            .footer {
+                font-size: 11px;
+                padding-top: 6px;
+                gap: 3px;
+            }
+            .stats {
+                gap: 8px;
+            }
+            .stats .stat-item {
+                font-size: 11px;
+            }
+            .core-status {
+                font-size: 11px;
+            }
+            .footer-hint {
+                font-size: 10px;
+                display: none;
+            }
+            .result-item .ri-name {
+                font-size: 12px;
+                min-width: 100px;
+            }
+            .result-item .ri-size {
+                font-size: 11px;
+            }
+            .modal-box {
+                padding: 16px 16px 14px;
+                max-width: 100%;
+                width: 94%;
+            }
+            .modal-box .modal-title {
+                font-size: 16px;
+            }
+            .modal-box .modal-subtitle {
+                font-size: 12px;
+            }
+            .toast {
+                font-size: 12px;
+                padding: 6px 16px;
+                bottom: 20px;
+                white-space: normal;
+                max-width: 90%;
+            }
+        }
+
+        /* ========== 小屏手机 (< 400px) ========== */
+        @media (max-width: 399px) {
+            .app {
+                padding: 6px 6px 4px 6px;
+            }
+            .logo {
+                font-size: 13px;
+            }
+            .logo .accent-block {
+                font-size: 10px;
+                padding: 1px 6px;
+            }
+            .btn {
+                font-size: 10px;
+                padding: 3px 6px;
+                min-height: 24px;
+            }
+            .file-card .fc-name {
+                font-size: 12px;
+            }
+            .fmt-btn {
+                font-size: 11px;
+                min-height: 30px;
+            }
+            .footer {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== 主应用 ====== -->
+    <div class="app" id="app" role="main">
+
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="accent-block">音</span>
+                音频提取工具
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-sm btn-file" id="pickBtn" title="选择视频文件">选择视频</button>
+                <button class="btn btn-sm" id="aboutBtn" title="关于本工具">关于</button>
+                <span class="btn-divider"></span>
+                <button class="btn btn-sm btn-danger" id="clearBtn" title="清空当前选择及结果">清空</button>
+            </div>
+        </header>
+
+        <!-- 内容滚动区 -->
+        <div class="content">
+
+            <!-- 拖放区 -->
+            <div class="drop-zone" id="dropZone">
+                <div class="dz-icon">🎞️</div>
+                <div class="dz-title">拖拽视频到此处</div>
+                <div class="dz-hint">或点击此处选择文件 · 支持 mp4 / mkv / mov / webm / flv 等常见格式</div>
+            </div>
+            <input type="file" id="fileInput" class="file-input-hidden" accept="video/*" />
+
+            <!-- 文件信息卡片（选中后显示） -->
+            <div class="file-card" id="fileCard" style="display:none;">
+                <div class="fc-name">
+                    <span class="fc-badge">视频</span>
+                    <span id="fileName">—</span>
+                </div>
+                <div class="fc-meta">
+                    <div class="fc-item">
+                        <label>大小</label>
+                        <b id="fileSize">—</b>
+                    </div>
+                    <div class="fc-item">
+                        <label>时长</label>
+                        <b id="fileDuration">—</b>
+                    </div>
+                    <div class="fc-item">
+                        <label>分辨率</label>
+                        <b id="fileRes">—</b>
+                    </div>
+                    <div class="fc-item">
+                        <label>类型</label>
+                        <b id="fileType">—</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 选项：输出格式 -->
+            <div class="opt-group" id="optGroup" style="display:none;">
+                <div class="section-header">
+                    <div class="header-left">
+                        <span>提取选项</span>
+                        <small>选择输出音频格式</small>
+                    </div>
+                </div>
+                <div class="seg" id="formatSeg">
+                    <button class="fmt-btn active" data-fmt="mp3">MP3 <small>通用</small></button>
+                    <button class="fmt-btn" data-fmt="wav">WAV <small>无损</small></button>
+                    <button class="fmt-btn" data-fmt="m4a">M4A <small>AAC</small></button>
+                    <button class="fmt-btn" data-fmt="copy">原样 <small>最快</small></button>
+                </div>
+
+                <!-- 比特率（仅 MP3 / M4A 显示） -->
+                <div class="seg" id="bitrateSeg">
+                    <button class="fmt-btn" data-br="128">128 kbps</button>
+                    <button class="fmt-btn active" data-br="192">192 kbps</button>
+                    <button class="fmt-btn" data-br="320">320 kbps</button>
+                </div>
+
+                <button class="btn btn-file" id="extractBtn" style="justify-content:center; min-height:42px; font-size:15px;">
+                    ⬇ 提取音频
+                </button>
+            </div>
+
+            <!-- 进度区（提取时显示） -->
+            <div class="progress-wrap" id="progressWrap" style="display:none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressPct">0%</span>
+                    <span class="pt-stage" id="progressStage">就绪</span>
+                </div>
+                <div class="log" id="log"></div>
+            </div>
+
+            <!-- 结果列表 -->
+            <div class="results" id="results"></div>
+
+        </div>
+
+        <!-- 底部状态栏 -->
+        <footer class="footer">
+            <div class="footer-left">
+                <div class="core-status">
+                    <span class="dot" id="coreDot"></span>
+                    <span id="coreText">核心未加载</span>
+                </div>
+                <div class="stats">
+                    <span class="stat-item">已提取 <span class="num" id="doneCount">0</span></span>
+                </div>
+            </div>
+            <span class="footer-hint">文件全程在本地浏览器处理，不会上传到任何服务器</span>
+        </footer>
+
+        <!-- 隐藏文件输入（备用） -->
+        <input type="file" id="fileInputHidden" class="file-input-hidden" accept="video/*" />
+
+        <!-- ====== 关于模态框 ====== -->
+        <div class="modal-overlay" id="aboutModal">
+            <div class="modal-box">
+                <div class="modal-title">关于 · 音频提取工具</div>
+                <div class="modal-subtitle">
+                    3xgVCPhelper 工具系列 · <strong>V1.0 Developer Beta</strong>
+                </div>
+                <div class="about-body">
+                    <p>这是一款<strong>纯前端</strong>的视频音频提取工具，与「歌词写作工具」同属 VCPhelper 系列。所有处理都在你的浏览器本地完成，视频文件<strong>不会上传</strong>到任何服务器，隐私安全。</p>
+                    <ul>
+                        <li><b>MP3</b>：通用兼容性最好，有损压缩，体积小</li>
+                        <li><b>WAV</b>：无损原始音质，体积较大，适合后期剪辑</li>
+                        <li><b>M4A (AAC)</b>：苹果/移动端友好，压缩效率高</li>
+                        <li><b>原样提取</b>：直接抽取音轨（如 AAC），零重新编码、速度最快</li>
+                    </ul>
+                    <div class="about-note">
+                        技术说明：本工具通过 <span class="code">ffmpeg.wasm</span> 在浏览器内运行完整的 FFmpeg。
+                        <strong>首次使用需联网</strong>下载约 32MB 的核心文件（自动在 npmmirror / jsDelivr / unpkg 多个 CDN 间切换，国内网络亦可访问），之后由浏览器缓存，重复使用无需再下载。
+                        若直接双击打开本文件（<span class="code">file://</span>）出现异常，请用本地 HTTP 服务器或将其部署到网站后访问。
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" id="aboutClose">知道了</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 清空确认对话框 ====== -->
+        <div class="modal-overlay" id="clearModal">
+            <div class="modal-box">
+                <div class="modal-title">清空当前内容？</div>
+                <div class="modal-subtitle">此操作将移除已选择的视频文件以及所有已提取的音频结果，且无法撤销。你确定吗？</div>
+                <div class="modal-actions">
+                    <button class="btn" id="clearCancel">取消</button>
+                    <button class="btn btn-danger" id="clearConfirm">确认清空</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- ====== ffmpeg.wasm 依赖（内嵌 Worker + 多 CDN 自动降级，无需服务器资源） ====== -->
+    <script>
+        /* ========== 内嵌 FFmpeg Worker（同源 Blob，兼容所有现代浏览器） ========== */
+        const WORKER_CODE = `
+var core = null;
+function post(id, data) { self.postMessage({ id: id, type: 'done', data: data }); }
+function fail(id, msg) { self.postMessage({ id: id, type: 'error', data: msg }); }
+self.onmessage = async function (e) {
+    var id = e.data.id, type = e.data.type, payload = e.data.data;
+    try {
+        if (type === 'load') {
+            importScripts(payload.coreURL);
+            var hash = btoa(JSON.stringify({
+                wasmURL: payload.wasmURL,
+                workerURL: payload.wasmURL.replace(/\\.wasm$/, '.worker.js')
+            }));
+            core = await self.createFFmpegCore({ mainScriptUrlOrBlob: payload.coreURL + '#' + hash });
+            core.setLogger(function (d) { self.postMessage({ type: 'log', data: d }); });
+            core.setProgress(function (d) { self.postMessage({ type: 'progress', data: d }); });
+            post(id, true);
+        } else if (type === 'writeFile') {
+            core.FS.writeFile(payload.path, payload.data);
+            post(id, true);
+        } else if (type === 'exec') {
+            if (core.setTimeout) core.setTimeout(payload.timeout || -1);
+            core.exec.apply(core, payload.args);
+            var ret = core.ret;
+            core.reset();
+            post(id, ret);
+        } else if (type === 'readFile') {
+            post(id, core.FS.readFile(payload.path, { encoding: 'binary' }));
+        } else if (type === 'deleteFile') {
+            core.FS.unlink(payload.path);
+            post(id, true);
+        }
+    } catch (err) {
+        fail(id, (err && err.message) ? err.message : String(err));
+    }
+};
+`;
+
+        /* ========== 主线程侧的 FFmpeg 客户端（与官方 @ffmpeg/ffmpeg 接口兼容的精简实现） ========== */
+        class FFmpegClient {
+            constructor() {
+                this._worker = null;
+                this._resolves = {};
+                this._rejects = {};
+                this._logCbs = [];
+                this._progressCbs = [];
+                this._seq = 0;
+            }
+            on(event, cb) {
+                if (event === 'log') this._logCbs.push(cb);
+                if (event === 'progress') this._progressCbs.push(cb);
+            }
+            async load(opts) {
+                const wurl = URL.createObjectURL(new Blob([WORKER_CODE], { type: 'text/javascript' }));
+                this._worker = new Worker(wurl);
+                this._worker.onmessage = ({ data }) => {
+                    if (data.type === 'log') { this._logCbs.forEach((f) => f(data.data)); return; }
+                    if (data.type === 'progress') { this._progressCbs.forEach((f) => f(data.data)); return; }
+                    const { id, type, data: d } = data;
+                    if (type === 'done' && this._resolves[id]) this._resolves[id](d);
+                    else if (type === 'error' && this._rejects[id]) this._rejects[id](new Error(String(d)));
+                    delete this._resolves[id];
+                    delete this._rejects[id];
+                };
+                return this._send('load', opts);
+            }
+            _send(type, data, transfer) {
+                const id = ++this._seq;
+                return new Promise((resolve, reject) => {
+                    this._resolves[id] = resolve;
+                    this._rejects[id] = reject;
+                    this._worker.postMessage({ id, type, data }, transfer || []);
+                });
+            }
+            writeFile(path, u8) { return this._send('writeFile', { path, data: u8 }, [u8.buffer]); }
+            exec(args, timeout) { return this._send('exec', { args, timeout: timeout || -1 }); }
+            readFile(path) { return this._send('readFile', { path }); }
+            deleteFile(path) { return this._send('deleteFile', { path }); }
+        }
+
+        /* ========== 核心 CDN 源（npmmirror 国内优先，自动降级） ========== */
+        const CORE_VERSION = '0.12.6';
+        const CORE_CDNS = [
+            { name: 'npmmirror（国内）', base: 'https://registry.npmmirror.com/@ffmpeg/core/0.12.6/files/dist/umd' },
+            { name: 'jsDelivr', base: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd' },
+            { name: 'unpkg', base: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd' }
+        ];
+        const CACHE_NAME = 'vcphelper-ffmpeg-core-' + CORE_VERSION;
+
+        /* ========== 全局状态 ========== */
+        let ffmpeg = null;
+        let ffmpegLoaded = false;
+        let selectedFile = null;
+        let currentFormat = 'mp3';
+        let currentBitrate = '192';
+        let doneCount = 0;
+        let isExtracting = false;
+
+        /* ========== DOM 引用 ========== */
+        const $ = (id) => document.getElementById(id);
+        const dropZone = $('dropZone');
+        const fileInput = $('fileInput');
+        const fileCard = $('fileCard');
+        const optGroup = $('optGroup');
+        const progressWrap = $('progressWrap');
+        const progressFill = $('progressFill');
+        const progressPct = $('progressPct');
+        const progressStage = $('progressStage');
+        const logEl = $('log');
+        const resultsEl = $('results');
+        const coreDot = $('coreDot');
+        const coreText = $('coreText');
+        const doneCountEl = $('doneCount');
+
+        /* ========== Toast ========== */
+        let toastTimer = null;
+        function toast(msg) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+        }
+
+        /* ========== 核心状态显示 ========== */
+        function setCoreStatus(state, text) {
+            coreDot.className = 'dot ' + (state || '');
+            coreText.textContent = text;
+        }
+
+        /* ========== 日志 ========== */
+        function log(msg) {
+            const line = document.createElement('div');
+            line.textContent = msg;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        /* ========== 工具函数 ========== */
+        function formatSize(bytes) {
+            if (!bytes && bytes !== 0) return '—';
+            const mb = bytes / (1024 * 1024);
+            if (mb >= 1024) return (mb / 1024).toFixed(2) + ' GB';
+            if (mb >= 1) return mb.toFixed(1) + ' MB';
+            return (bytes / 1024).toFixed(1) + ' KB';
+        }
+        function formatDuration(sec) {
+            if (!sec || isNaN(sec)) return '—';
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+        function getExt(name) {
+            const m = name && name.match(/\.([^.]+)$/);
+            return m ? m[1].toLowerCase() : '';
+        }
+
+        /* ========== 选择 / 拖拽文件 ========== */
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith('video/') && !/\.(mp4|mkv|mov|webm|flv|avi|m4v|ts|wmv)$/i.test(file.name)) {
+                toast('请选择视频文件');
+                return;
+            }
+            selectedFile = file;
+            fileCard.style.display = 'flex';
+            optGroup.style.display = 'flex';
+            $('fileName').textContent = file.name;
+            $('fileSize').textContent = formatSize(file.size);
+            $('fileType').textContent = file.type || ('.' + getExt(file.name)).toUpperCase() || '未知';
+            $('fileDuration').textContent = '读取中…';
+            $('fileRes').textContent = '读取中…';
+
+            // 读取视频元数据（时长/分辨率）
+            const url = URL.createObjectURL(file);
+            const v = document.createElement('video');
+            v.preload = 'metadata';
+            v.onloadedmetadata = () => {
+                $('fileDuration').textContent = formatDuration(v.duration);
+                $('fileRes').textContent = (v.videoWidth && v.videoHeight) ? `${v.videoWidth}×${v.videoHeight}` : '—';
+                URL.revokeObjectURL(url);
+            };
+            v.onerror = () => {
+                $('fileDuration').textContent = '—';
+                $('fileRes').textContent = '—';
+                URL.revokeObjectURL(url);
+            };
+            v.src = url;
+
+            toast('已选择：' + file.name);
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        $('pickBtn').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+            e.target.value = '';
+        });
+
+        ['dragenter', 'dragover'].forEach((ev) =>
+            dropZone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('drag');
+            })
+        );
+        ['dragleave', 'drop'].forEach((ev) =>
+            dropZone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('drag');
+            })
+        );
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files[0]) handleFile(dt.files[0]);
+        });
+        // 阻止整页拖放打开文件
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => e.preventDefault());
+
+        /* ========== 格式 / 比特率 选择 ========== */
+        $('formatSeg').addEventListener('click', (e) => {
+            const btn = e.target.closest('.fmt-btn');
+            if (!btn) return;
+            currentFormat = btn.dataset.fmt;
+            [...$('formatSeg').children].forEach((b) => b.classList.toggle('active', b === btn));
+            // 原样 / WAV 不需要比特率
+            $('bitrateSeg').style.display = (currentFormat === 'mp3' || currentFormat === 'm4a') ? 'flex' : 'none';
+        });
+        $('bitrateSeg').addEventListener('click', (e) => {
+            const btn = e.target.closest('.fmt-btn');
+            if (!btn) return;
+            currentBitrate = btn.dataset.br;
+            [...$('bitrateSeg').children].forEach((b) => b.classList.toggle('active', b === btn));
+        });
+
+        /* ========== 下载核心文件（缓存优先 + 多 CDN 降级 + 进度） ========== */
+        function updateCoreProgress(name, received, total) {
+            const mb = (received / 1048576).toFixed(1);
+            if (total > 1024) {
+                const pct = Math.min(99, Math.round((received / total) * 100));
+                progressFill.style.width = pct + '%';
+                progressPct.textContent = pct + '%';
+                progressStage.textContent = '下载核心 ' + name + '：' + mb + ' / ' + (total / 1048576).toFixed(1) + ' MB';
+            } else {
+                progressStage.textContent = '下载核心 ' + name + '：' + mb + ' MB';
+            }
+        }
+
+        async function getCoreFile(name, mime) {
+            // 1) Cache API 浏览器缓存（HTTPS 下可用，重复访问免下载）
+            let cache = null;
+            try { cache = await caches.open(CACHE_NAME); } catch (e) { /* file:// 等非安全上下文无 Cache API */ }
+            if (cache) {
+                try {
+                    const key = new Request(new URL('core/' + name, location.href).href);
+                    const hit = await cache.match(key);
+                    if (hit && hit.ok) {
+                        log('缓存命中：' + name);
+                        return { url: URL.createObjectURL(await hit.blob()), cached: true };
+                    }
+                } catch (e) { /* 缓存读取失败则走网络 */ }
+            }
+            // 2) 多 CDN 依次尝试
+            let lastErr = null;
+            for (const cdn of CORE_CDNS) {
+                try {
+                    log('正在从 ' + cdn.name + ' 下载 ' + name + ' …');
+                    const resp = await fetch(cdn.base + '/' + name, { mode: 'cors' });
+                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                    let blob;
+                    if (resp.body && typeof resp.body.getReader === 'function') {
+                        const total = +(resp.headers.get('Content-Length') || 0);
+                        const reader = resp.body.getReader();
+                        const chunks = [];
+                        let received = 0;
+                        while (true) {
+                            const r = await reader.read();
+                            if (r.done) break;
+                            chunks.push(r.value);
+                            received += r.value.length;
+                            updateCoreProgress(name, received, total);
+                        }
+                        blob = new Blob(chunks, { type: mime });
+                    } else {
+                        blob = await resp.blob();
+                    }
+                    if (blob.size < 1024) throw new Error('文件内容异常（仅 ' + blob.size + ' 字节）');
+                    if (cache) {
+                        try {
+                            const key = new Request(new URL('core/' + name, location.href).href);
+                            await cache.put(key, new Response(blob, { headers: { 'Content-Type': mime } }));
+                        } catch (e) { /* 缓存写入失败不影响使用 */ }
+                    }
+                    return { url: URL.createObjectURL(blob), cached: false };
+                } catch (e) {
+                    lastErr = e;
+                    log('✗ ' + cdn.name + ' 下载失败：' + (e.message || e) + '，切换下一个源');
+                }
+            }
+            throw new Error('所有 CDN 均无法下载 ' + name + '，请检查网络后重试');
+        }
+
+        /* ========== 加载 ffmpeg 核心 ========== */
+        async function loadFFmpeg() {
+            if (ffmpegLoaded) return;
+            setCoreStatus('loading', '正在加载核心…');
+            progressStage.textContent = '加载 FFmpeg 核心';
+            let coreInfo = null, wasmInfo = null;
+            try {
+                coreInfo = await getCoreFile('ffmpeg-core.js', 'text/javascript');
+                wasmInfo = await getCoreFile('ffmpeg-core.wasm', 'application/wasm');
+                progressStage.textContent = '初始化核心…';
+
+                ffmpeg = new FFmpegClient();
+                ffmpeg.on('log', ({ message }) => {
+                    if (message && message.trim()) log(message.trim());
+                });
+                ffmpeg.on('progress', ({ progress }) => {
+                    const p = Math.max(0, Math.min(1, progress || 0));
+                    const pct = Math.round(p * 100);
+                    if (pct > 0 && pct < 100) {
+                        progressFill.style.width = pct + '%';
+                        progressPct.textContent = pct + '%';
+                    }
+                });
+                await ffmpeg.load({ coreURL: coreInfo.url, wasmURL: wasmInfo.url });
+                ffmpegLoaded = true;
+                setCoreStatus('ready', '核心就绪');
+                if (coreInfo.cached && wasmInfo.cached) {
+                    log('✓ 核心来自浏览器缓存，本次无需联网下载');
+                }
+            } catch (err) {
+                console.error(err);
+                setCoreStatus('error', '核心加载失败');
+                progressStage.textContent = '核心加载失败';
+                log('核心加载失败：' + (err && err.message ? err.message : err));
+                toast('FFmpeg 核心加载失败，请检查网络');
+                throw err;
+            }
+        }
+
+        /* ========== 提取音频 ========== */
+        async function extract() {
+            if (isExtracting) return;
+            if (!selectedFile) {
+                toast('请先选择视频文件');
+                return;
+            }
+            isExtracting = true;
+            $('extractBtn').disabled = true;
+
+            progressWrap.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressPct.textContent = '0%';
+            progressStage.textContent = '准备中…';
+            logEl.innerHTML = '';
+
+            try {
+                await loadFFmpeg();
+
+                const srcExt = getExt(selectedFile.name) || 'mp4';
+                const inName = 'input.' + srcExt;
+                const outExt = currentFormat === 'wav' ? 'wav' : currentFormat === 'm4a' ? 'm4a' : currentFormat === 'copy' ? 'm4a' : 'mp3';
+                const outName = 'output.' + outExt;
+
+                progressStage.textContent = '写入输入文件';
+                log('>> 写入输入：' + inName);
+                await ffmpeg.writeFile(inName, new Uint8Array(await selectedFile.arrayBuffer()));
+
+                const args = ['-i', inName, '-vn'];
+                if (currentFormat === 'wav') {
+                    args.push('-acodec', 'pcm_s16le');
+                } else if (currentFormat === 'm4a') {
+                    args.push('-acodec', 'aac', '-b:a', currentBitrate + 'k');
+                } else if (currentFormat === 'copy') {
+                    args.push('-acodec', 'copy');
+                } else {
+                    args.push('-acodec', 'libmp3lame', '-b:a', currentBitrate + 'k');
+                }
+                args.push(outName);
+
+                progressStage.textContent = '提取音频中…';
+                log('>> ffmpeg ' + args.join(' '));
+                const code = await ffmpeg.exec(args);
+                if (code !== 0) {
+                    throw new Error('FFmpeg 退出码 ' + code + '（视频可能不含音轨或格式不支持）');
+                }
+
+                progressFill.style.width = '100%';
+                progressPct.textContent = '100%';
+                progressStage.textContent = '读取输出';
+                log('>> 读取输出：' + outName);
+                const data = await ffmpeg.readFile(outName);
+
+                const mime =
+                    currentFormat === 'wav' ? 'audio/wav'
+                    : currentFormat === 'm4a' || currentFormat === 'copy' ? 'audio/mp4'
+                    : 'audio/mpeg';
+                const blob = new Blob([data], { type: mime });
+
+                const baseName = selectedFile.name.replace(/\.[^.]+$/, '');
+                const outFileName = `${baseName}_audio.${outExt}`;
+                addResult(outFileName, outExt.toUpperCase(), blob);
+
+                // 清理临时文件
+                try { await ffmpeg.deleteFile(inName); } catch (e) {}
+                try { await ffmpeg.deleteFile(outName); } catch (e) {}
+
+                progressStage.textContent = '完成';
+                log('>> 完成 ✓');
+                toast('提取完成：' + outFileName);
+            } catch (err) {
+                console.error(err);
+                progressStage.textContent = '失败';
+                const msg = err && err.message ? err.message : String(err);
+                log('错误：' + msg);
+                toast('提取失败：' + msg);
+            } finally {
+                isExtracting = false;
+                $('extractBtn').disabled = false;
+            }
+        }
+
+        /* ========== 添加结果 ========== */
+        function addResult(name, tag, blob) {
+            const url = URL.createObjectURL(blob);
+            const size = formatSize(blob.size);
+            doneCount++;
+            doneCountEl.textContent = doneCount;
+
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `
+                <span class="ri-name"></span>
+                <span class="ri-tag"></span>
+                <span class="ri-size"></span>
+                <div class="ri-actions">
+                    <button class="btn btn-sm btn-clip ri-download">⬇ 下载</button>
+                    <button class="btn btn-sm btn-danger ri-remove">移除</button>
+                </div>
+            `;
+            item.querySelector('.ri-name').textContent = name;
+            item.querySelector('.ri-tag').textContent = tag;
+            item.querySelector('.ri-size').textContent = size;
+            item.querySelector('.ri-download').addEventListener('click', () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            });
+            item.querySelector('.ri-remove').addEventListener('click', () => {
+                URL.revokeObjectURL(url);
+                item.remove();
+                doneCount--;
+                doneCountEl.textContent = doneCount;
+            });
+
+            resultsEl.prepend(item);
+        }
+
+        $('extractBtn').addEventListener('click', extract);
+
+        /* ========== 清空 ========== */
+        function doClear() {
+            selectedFile = null;
+            fileCard.style.display = 'none';
+            optGroup.style.display = 'none';
+            progressWrap.style.display = 'none';
+            // 释放结果 blob URL
+            [...resultsEl.children].forEach((it) => {
+                const a = it.querySelector('.ri-download');
+                // URL 通过 a.href 引用，简单移除 DOM 即可（小工具场景可接受）
+            });
+            resultsEl.innerHTML = '';
+            logEl.innerHTML = '';
+            doneCount = 0;
+            doneCountEl.textContent = '0';
+            toast('已清空');
+        }
+        $('clearBtn').addEventListener('click', () => $('clearModal').classList.add('active'));
+        $('clearCancel').addEventListener('click', () => $('clearModal').classList.remove('active'));
+        $('clearConfirm').addEventListener('click', () => {
+            $('clearModal').classList.remove('active');
+            doClear();
+        });
+
+        /* ========== 关于 ========== */
+        $('aboutBtn').addEventListener('click', () => $('aboutModal').classList.add('active'));
+        $('aboutClose').addEventListener('click', () => $('aboutModal').classList.remove('active'));
+        [$('aboutModal'), $('clearModal')].forEach((m) =>
+            m.addEventListener('click', (e) => {
+                if (e.target === m) m.classList.remove('active');
+            })
+        );
+
+        /* ========== 初始化 ========== */
+        setCoreStatus('', '核心未加载');
+        log('提示：首次提取时会自动下载 FFmpeg 核心（约 32MB，多 CDN 自动切换，国内可直连；之后浏览器缓存）。');
+    </script>
+</body>
+</html>

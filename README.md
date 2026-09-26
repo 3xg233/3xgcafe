@@ -18,7 +18,7 @@
 | **[3xgcafe Guard](Current%20version/ScreenGuard/)** | 空闲自动锁定屏幕（毛玻璃锁屏 + 密码解锁） | [README](Current%20version/ScreenGuard/README.md) | [MAINTENANCE](Current%20version/ScreenGuard/MAINTENANCE.md) |
 | **[3xgcafe Console](Current%20version/3xgcafeConsole/)** | 统一管理面板：启停 / 自启 / 实时状态（命名管道通道） | [README](Current%20version/3xgcafeConsole/README.md) | [MAINTENANCE](Current%20version/3xgcafeConsole/MAINTENANCE.md) |
 
-网页工具（纯前端）：**[lyrics](Current%20version/lyrics/)** —— 面向音乐人的作词辅助工具（稳定版 + 实时协作 Beta 版）。
+网页工具（纯前端）：**[lyrics](Current%20version/lyrics/)** —— 面向音乐人的作词辅助工具（稳定版 + 实时协作 Beta 版）；**[audio](Current%20version/audio/)** —— 视频音频提取工具（ffmpeg.wasm 浏览器本地提取，Beta 版）。
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>歌词写作工具~3xgVCPhelper · V1.2 Developer Beta</title>
+    <title>歌词写作工具~3xgVCPhelper · V1.3 Developer Beta</title>
     <style>
         /* ========== 全局重置 ========== */
         * {
@@ -1085,6 +1085,22 @@
             display: none;
         }
 
+        /* ========== 文件管理模态框 ========== */
+        .file-item {
+            transition: all 0.2s ease;
+        }
+        .file-item:hover {
+            border-color: var(--accent-hover) !important;
+            background: var(--surface) !important;
+        }
+        .file-item .btn {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+        .file-item:hover .btn {
+            opacity: 1;
+        }
+
         /* ========== Toast ========== */
         .toast {
             position: fixed;
@@ -1933,7 +1949,7 @@
             }
         }
 
-        /* ========== 多人在线协作 (v1.2 beta) ========== */
+        /* ========== 多人在线协作 (v1.3 beta) ========== */
         .collab-modal {
             max-width: 560px;
             overflow-y: auto;
@@ -2055,7 +2071,7 @@
             letter-spacing: 2px;
         }
 
-        /* ========== 协作房间状态栏 (v1.2) ========== */
+        /* ========== 协作房间状态栏 (v1.3) ========== */
         .collab-bar {
             flex-shrink: 0;
             display: flex;
@@ -2461,7 +2477,7 @@
             <div class="logo">
                 <span class="accent-block">词</span>
                 歌词写作工具
-                <span style="font-size:11px;letter-spacing:0.2px;color:#fff;">V1.2 Developer Beta</span>
+                <span style="font-size:11px;letter-spacing:0.2px;color:#fff;">V1.3 Developer Beta</span>
             </div>
             <div class="header-actions">
                 <button class="btn btn-sm btn-file" id="importBtn" title="从 .txt 文件导入歌词">导入</button>
@@ -2472,7 +2488,10 @@
                 <span class="btn-divider"></span>
                 <button class="btn btn-sm btn-danger" id="clearBtn" title="清空所有内容">清空</button>
                 <span class="btn-divider"></span>
-                <button class="btn btn-sm" id="collabBtn" title="多人在线协作 (v1.2 beta)">协作</button>
+                <button class="btn btn-sm btn-file" id="saveLocalBtn" title="保存歌词到本地">保存</button>
+                <button class="btn btn-sm btn-file" id="openLocalBtn" title="打开本地已保存的歌词">打开</button>
+                <span class="btn-divider"></span>
+                <button class="btn btn-sm" id="collabBtn" title="多人在线协作 (v1.3 beta)">协作</button>
             </div>
         </header>
 
@@ -2703,11 +2722,11 @@
         </div>
 
         <!-- ================================================================
-             多人在线协作 (v1.2 beta)
+             多人在线协作 (v1.3 beta)
              ================================================================ -->
         <div class="modal-overlay" id="collabModal">
             <div class="modal-box collab-modal">
-                <div class="modal-title">多人在线协作 <span style="font-size:12px;color:var(--text-muted);">v1.2 beta</span></div>
+                <div class="modal-title">多人在线协作 <span style="font-size:12px;color:var(--text-muted);">v1.3 beta</span></div>
                 <div class="modal-subtitle">
                     房主创建房间，其他人凭房间码加入。所有内容保存在<strong>房主的电脑</strong>上。
                 </div>
@@ -3287,6 +3306,404 @@
             });
 
             // ================================================================
+            //  IndexedDB 本地文件管理
+            // ================================================================
+
+            const DB_NAME = 'lyrics_app_db';
+            const DB_VERSION = 1;
+            const STORE_NAME = 'lyrics';
+
+            function openDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(STORE_NAME)) {
+                            const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                            store.createIndex('title', 'title', { unique: false });
+                            store.createIndex('updatedAt', 'updatedAt', { unique: false });
+                        }
+                    };
+                });
+            }
+
+            async function saveLyricsToDB(title, data) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const now = Date.now();
+
+                    // 检查是否已存在同名歌词
+                    const index = store.index('title');
+                    const request = index.getAll(title);
+                    request.onsuccess = () => {
+                        const existing = request.result.find(item => item.title === title);
+                        const record = {
+                            id: existing ? existing.id : 'lyrics_' + now + '_' + Math.random().toString(36).substr(2, 9),
+                            title: title,
+                            data: data,
+                            createdAt: existing ? existing.createdAt : now,
+                            updatedAt: now
+                        };
+                        const putRequest = store.put(record);
+                        putRequest.onsuccess = () => resolve(record);
+                        putRequest.onerror = () => reject(putRequest.error);
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function getAllLyricsFromDB() {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.getAll();
+                    request.onsuccess = () => {
+                        // 按更新时间倒序排列
+                        const results = request.result.sort((a, b) => b.updatedAt - a.updatedAt);
+                        resolve(results);
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function loadLyricsFromDB(id) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function deleteLyricsFromDB(id) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function renameLyricsInDB(id, newTitle) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.get(id);
+                    request.onsuccess = () => {
+                        const record = request.result;
+                        if (record) {
+                            record.title = newTitle;
+                            record.updatedAt = Date.now();
+                            const putRequest = store.put(record);
+                            putRequest.onsuccess = () => resolve(record);
+                            putRequest.onerror = () => reject(putRequest.error);
+                        } else {
+                            reject(new Error('记录不存在'));
+                        }
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ================================================================
+            //  文件管理模态框
+            // ================================================================
+
+            let fileManagerModal = null;
+            let fileListContainer = null;
+            let currentEditingId = null;
+
+            function createFileManagerModal() {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'fileManagerModal';
+                modal.innerHTML = `
+                    <div class="modal-box" style="max-width:600px;">
+                        <div class="modal-title">📁 本地歌词管理</div>
+                        <div class="modal-subtitle">
+                            管理保存在本地的歌词文件。点击「打开」加载歌词到编辑器。
+                        </div>
+                        <div class="modal-body" style="max-height:400px;overflow-y:auto;">
+                            <div id="fileListContainer" style="display:flex;flex-direction:column;gap:8px;">
+                                <div class="empty-state">
+                                    <span>暂无保存的歌词</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-file" id="fileManagerNew">新建歌词</button>
+                            <button class="btn" id="fileManagerClose">关闭</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                fileManagerModal = modal;
+                fileListContainer = document.getElementById('fileListContainer');
+
+                // 绑定事件
+                document.getElementById('fileManagerClose').addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+                document.getElementById('fileManagerNew').addEventListener('click', () => {
+                    if (collabSpectator) {
+                        showToast('旁观者无法新建歌词');
+                        return;
+                    }
+                    // 自动保存当前歌词
+                    saveCurrentLyricsAutomatically();
+                    // 清空编辑器
+                    setData({
+                        title: '',
+                        lyricist: '',
+                        composer: '',
+                        sections: [{ id: generateId(), type: DEFAULT_TYPE, content: '' }],
+                        inspiration: ''
+                    });
+                    lastSavedData = getDataString();
+                    saveToStorage();
+                    modal.classList.remove('active');
+                    showToast('已创建新歌词');
+                });
+
+                // 点击遮罩关闭
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            }
+
+            async function showFileManager() {
+                if (!fileManagerModal) {
+                    createFileManagerModal();
+                }
+
+                try {
+                    const lyrics = await getAllLyricsFromDB();
+                    renderFileList(lyrics);
+                    fileManagerModal.classList.add('active');
+                } catch (error) {
+                    console.error('加载文件列表失败:', error);
+                    showToast('加载文件列表失败');
+                }
+            }
+
+            function renderFileList(lyrics) {
+                if (!fileListContainer) return;
+
+                if (lyrics.length === 0) {
+                    fileListContainer.innerHTML = `
+                        <div class="empty-state">
+                            <span>暂无保存的歌词</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                fileListContainer.innerHTML = lyrics.map(item => {
+                    const date = new Date(item.updatedAt);
+                    const dateStr = date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const size = new Blob([JSON.stringify(item.data)]).size;
+                    const sizeStr = size < 1024 ? size + ' B' : (size / 1024).toFixed(1) + ' KB';
+
+                    return `
+                        <div class="file-item" data-id="${item.id}" style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 12px 14px;
+                            background: var(--bg);
+                            border: 1px solid var(--border);
+                            border-radius: var(--radius);
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        ">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:15px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${item.title || '未命名歌词'}
+                                </div>
+                                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                                    ${dateStr} · ${sizeStr}
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;">
+                                <button class="btn btn-xs btn-file file-open" data-id="${item.id}" title="打开">打开</button>
+                                <button class="btn btn-xs file-rename" data-id="${item.id}" title="重命名">重命名</button>
+                                <button class="btn btn-xs btn-danger-sm file-delete" data-id="${item.id}" title="删除">删除</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // 绑定事件
+                fileListContainer.querySelectorAll('.file-open').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openLyricsFromDB(btn.dataset.id);
+                    });
+                });
+
+                fileListContainer.querySelectorAll('.file-rename').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        renameLyrics(btn.dataset.id);
+                    });
+                });
+
+                fileListContainer.querySelectorAll('.file-delete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteLyrics(btn.dataset.id);
+                    });
+                });
+
+                // 悬停效果
+                fileListContainer.querySelectorAll('.file-item').forEach(item => {
+                    item.addEventListener('mouseenter', () => {
+                        item.style.borderColor = 'var(--accent-hover)';
+                        item.style.background = 'var(--surface)';
+                    });
+                    item.addEventListener('mouseleave', () => {
+                        item.style.borderColor = 'var(--border)';
+                        item.style.background = 'var(--bg)';
+                    });
+                });
+            }
+
+            async function openLyricsFromDB(id) {
+                // 只有房主可以加载其他歌词
+                if (collabRole === 'guest') {
+                    showToast('只有房主可以加载其他歌词');
+                    return;
+                }
+                if (collabSpectator) {
+                    showToast('旁观者无法加载歌词');
+                    return;
+                }
+
+                try {
+                    const record = await loadLyricsFromDB(id);
+                    if (record) {
+                        // 自动保存当前歌词
+                        saveCurrentLyricsAutomatically();
+                        // 加载新歌词
+                        setData(record.data);
+                        lastSavedData = getDataString();
+                        saveToStorage();
+                        fileManagerModal.classList.remove('active');
+                        showToast('已加载歌词: ' + (record.title || '未命名歌词'));
+                    }
+                } catch (error) {
+                    console.error('加载歌词失败:', error);
+                    showToast('加载歌词失败');
+                }
+            }
+
+            async function renameLyrics(id) {
+                try {
+                    const record = await loadLyricsFromDB(id);
+                    if (!record) return;
+
+                    const newTitle = prompt('请输入新标题:', record.title || '');
+                    if (newTitle !== null && newTitle.trim()) {
+                        await renameLyricsInDB(id, newTitle.trim());
+                        showToast('重命名成功');
+                        // 刷新列表
+                        const lyrics = await getAllLyricsFromDB();
+                        renderFileList(lyrics);
+                    }
+                } catch (error) {
+                    console.error('重命名失败:', error);
+                    showToast('重命名失败');
+                }
+            }
+
+            async function deleteLyrics(id) {
+                if (!confirm('确定要删除这首歌词吗？此操作无法撤销。')) {
+                    return;
+                }
+
+                try {
+                    await deleteLyricsFromDB(id);
+                    showToast('删除成功');
+                    // 刷新列表
+                    const lyrics = await getAllLyricsFromDB();
+                    renderFileList(lyrics);
+                } catch (error) {
+                    console.error('删除失败:', error);
+                    showToast('删除失败');
+                }
+            }
+
+            function saveCurrentLyricsAutomatically() {
+                const current = getDataString();
+                if (current !== lastSavedData) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, current);
+                        lastSavedData = current;
+                    } catch (e) {
+                        console.warn('自动保存失败:', e);
+                    }
+                }
+            }
+
+            // ================================================================
+            //  保存到本地文件管理
+            // ================================================================
+
+            async function saveToFileManager() {
+                // 检查权限
+                if (collabSpectator) {
+                    showToast('旁观者无法保存歌词');
+                    return;
+                }
+
+                const data = getData();
+                let title = data.title;
+
+                // 如果没有标题，提示用户输入
+                if (!title || !title.trim()) {
+                    title = prompt('请输入歌词标题:', '');
+                    if (title === null) {
+                        // 用户取消
+                        return;
+                    }
+                    if (!title.trim()) {
+                        title = '未命名歌词';
+                    }
+                    // 更新编辑器中的标题
+                    titleEl.value = title.trim();
+                }
+
+                try {
+                    setStatus('saving', '保存中…');
+                    await saveLyricsToDB(title.trim(), data);
+                    setStatus('saved', '已保存');
+                    showToast('歌词已保存到本地');
+                } catch (error) {
+                    console.error('保存到本地失败:', error);
+                    setStatus('error', '保存失败');
+                    showToast('保存失败');
+                }
+            }
+
+            // ================================================================
             //  状态指示
             // ================================================================
 
@@ -3740,6 +4157,12 @@
 
             exportBtn.addEventListener('click', exportLyricsFile);
 
+            // 保存到本地文件管理
+            saveLocalBtn.addEventListener('click', saveToFileManager);
+
+            // 打开本地文件管理
+            openLocalBtn.addEventListener('click', showFileManager);
+
             document.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                     e.preventDefault();
@@ -3760,7 +4183,7 @@
             });
 
             // ================================================================
-            //  多人在线协作 (v1.2 developer beta)
+            //  多人在线协作 (v1.3 developer beta)
             //  两种连接方式：A) PeerJS 快速模式（短码）  B) 手动复制粘贴（零第三方）
             //  同步策略：房主权威 + 全量 state JSON + 防抖；客端只发不落盘
             // ================================================================
@@ -4378,6 +4801,9 @@
                 container.querySelectorAll('.section-toolbar .btn, .section-toolbar select').forEach(el => { el.disabled = lock; });
                 if (addSectionBtn) addSectionBtn.disabled = lock;
                 [importBtn, importTextBtn, clearBtn].forEach(el => { if (el) el.disabled = lock; });
+                // 本地文件管理按钮权限控制
+                if (saveLocalBtn) saveLocalBtn.disabled = lock;
+                if (openLocalBtn) openLocalBtn.disabled = lock;
             }
 
             // 房主：踢出成员
