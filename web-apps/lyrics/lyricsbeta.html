@@ -685,8 +685,6 @@
         }
         .zg-popover {
             position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
             z-index: 60;
             width: 280px;
             background: var(--card-bg);
@@ -4330,6 +4328,9 @@
                     <button class="zg-pop-done">完成</button>
                 `;
                 row.appendChild(pop);
+                // 定位到触发按键（chip）正下方：行居中后 chip 不在行最左，需按 chip 实际位置对齐
+                pop.style.left = chip.offsetLeft + 'px';
+                pop.style.top = (chip.offsetTop + chip.offsetHeight + 6) + 'px';
                 bindPopover(pop, section, line, chip, row);
                 setTimeout(() => {
                     docClickClose = (ev) => {
