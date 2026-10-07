@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>歌词写作工具~3xgVCPhelper · V1.3 Developer Beta</title>
+    <title>歌词写作工具~3xgVCPhelper · V1.4 Developer Beta</title>
     <style>
         /* ========== 全局重置 ========== */
         * {
@@ -571,6 +571,256 @@
         }
         .section-textarea::-webkit-scrollbar {
             display: none;
+        }
+
+        /* ========== 字格编辑 ========== */
+        .section-toolbar .btn-grid.active {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent-hover);
+        }
+        .grid-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 14px 14px 14px;
+            background: rgba(0, 0, 0, 0.06);
+        }
+        .zg-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        .zg-config-chip {
+            flex: 0 0 auto;
+            min-width: 62px;
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.35);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .zg-config-chip:hover {
+            border-color: var(--accent-hover);
+            color: var(--text-primary);
+        }
+        .zg-config-chip.fixed {
+            color: var(--accent-hover);
+            border-color: var(--accent);
+        }
+        .zg-cells {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+        }
+        .zg-cell {
+            position: relative;
+            width: 30px;
+            height: 36px;
+            margin: 0 1px;
+            padding: 0;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 17px;
+            line-height: 34px;
+            color: var(--text-primary);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            caret-color: var(--accent-hover);
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .zg-cell:focus {
+            border-color: var(--accent-hover);
+            background: rgba(37, 99, 235, 0.10);
+        }
+        .zg-cell.has-val {
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        .zg-cell.zg-break {
+            margin-left: 16px;
+        }
+        .zg-cell.zg-break::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.20);
+        }
+        .zg-cell:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+        .zg-row-del {
+            flex: 0 0 auto;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .zg-row-del:hover {
+            color: #fff;
+            border-color: #a04040;
+            background: rgba(180, 40, 40, 0.25);
+        }
+        .zg-popover {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            z-index: 60;
+            width: 280px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .zg-pop-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .zg-pop-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .zg-pop-count .stepper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .zg-pop-count .stepper button {
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .zg-pop-count .stepper button:hover {
+            border-color: var(--accent-hover);
+        }
+        .zg-pop-count .val {
+            min-width: 22px;
+            text-align: center;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        .zg-pop-free {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+        .zg-pop-free.active {
+            color: var(--accent-hover);
+            border-color: var(--accent);
+        }
+        .zg-break-strip {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-left: 4px;
+        }
+        .zg-bs-cell {
+            width: 24px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-size: 12px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        .zg-bs-div {
+            width: 18px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 14px;
+            user-select: none;
+        }
+        .zg-bs-div:hover {
+            color: var(--text-primary);
+        }
+        .zg-bs-div.on {
+            color: var(--accent-hover);
+        }
+        .zg-pop-preview {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+        }
+        .zg-pop-preview .pc {
+            width: 22px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-size: 13px;
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+        .zg-pop-preview .pc.br {
+            margin-left: 10px;
+        }
+        .zg-pop-preview .pc.empty {
+            color: var(--text-muted);
+        }
+        .zg-pop-done {
+            align-self: flex-end;
+            font-size: 12px;
+            padding: 5px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--accent);
+            background: var(--accent-light);
+            color: var(--accent-hover);
+            cursor: pointer;
+        }
+        .zg-pop-done:hover {
+            background: var(--accent);
+            color: #fff;
         }
 
         /* ========== 底部状态 ========== */
@@ -2477,7 +2727,7 @@
             <div class="logo">
                 <span class="accent-block">词</span>
                 歌词写作工具
-                <span style="font-size:11px;letter-spacing:0.2px;color:#fff;">V1.3 Developer Beta</span>
+                <span style="font-size:11px;letter-spacing:0.2px;color:#fff;">V1.4 Developer Beta</span>
             </div>
             <div class="header-actions">
                 <button class="btn btn-sm btn-file" id="importBtn" title="从 .txt 文件导入歌词">导入</button>
@@ -3175,6 +3425,7 @@
                     id: s.id || generateId(),
                     type: s.type || DEFAULT_TYPE,
                     content: s.content || '',
+                    grid: s.grid || null,
                 }));
                 inspirationText.value = data.inspiration || '';
                 updateInspirationStatus('saved', '已保存');
@@ -3740,7 +3991,372 @@
             //  渲染段落
             // ================================================================
 
+            // ================================================================
+            //  字格编辑（每行字格 + 断句）
+            // ================================================================
+            let docClickClose = null;
+
+            function sectionById(id) {
+                return state.sections.find(s => s.id === id);
+            }
+
+            function escapeAttr(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function ensureGrid(section) {
+                if (!section.grid) section.grid = { enabled: false, lines: [] };
+                if (!section.grid.lines) section.grid.lines = [];
+                return section.grid;
+            }
+
+            function getCfg(section, line) {
+                if (section.grid && section.grid.lines && section.grid.lines[line]) {
+                    return section.grid.lines[line];
+                }
+                return { count: 0, breaks: [] };
+            }
+
+            function groupCounts(count, breaks) {
+                const bs = Array.from(breaks || []).filter(b => b > 0 && b < count).sort((a, b) => a - b);
+                const groups = [];
+                let start = 0;
+                for (const b of bs) { groups.push(b - start); start = b; }
+                groups.push(count - start);
+                return groups;
+            }
+
+            function describeChip(cfg) {
+                if (!cfg || !cfg.count || cfg.count <= 0) return '自由';
+                return cfg.count + '字·' + groupCounts(cfg.count, cfg.breaks || []).join('-');
+            }
+
+            function buildCells(chars, count, breaks, dis) {
+                let h = '';
+                for (let k = 0; k < count; k++) {
+                    const ch = (chars[k] !== undefined) ? chars[k] : '';
+                    const brk = (breaks || []).includes(k);
+                    h += `<input type="text" class="zg-cell${ch ? ' has-val' : ''}${brk ? ' zg-break' : ''}" data-pos="${k}" value="${escapeAttr(ch)}"${dis} />`;
+                }
+                return h;
+            }
+
+            function buildRow(id, line, lineStr, cfg, dis) {
+                const chars = Array.from(lineStr || '');
+                const count = (cfg && cfg.count > 0) ? cfg.count : Math.max(chars.length, 1);
+                const breaks = (cfg && cfg.count > 0) ? (cfg.breaks || []) : [];
+                return `<div class="zg-row" data-line="${line}">
+                                    <button class="zg-config-chip${cfg && cfg.count > 0 ? ' fixed' : ''}" data-id="${id}" data-line="${line}" title="字格设置"${dis}>${describeChip(cfg)}</button>
+                                    <div class="zg-cells">${buildCells(chars, count, breaks, dis)}</div>
+                                    <button class="zg-row-del" data-id="${id}" data-line="${line}" title="删除此行"${dis}>✕</button>
+                                </div>`;
+            }
+
+            function buildGridRows(section, dis) {
+                const lines = (section.content || '').split('\n');
+                const cfgs = (section.grid && section.grid.lines) || [];
+                if (lines.length === 0) lines.push('');
+                return lines.map((ln, i) => buildRow(section.id, i, ln, cfgs[i], dis)).join('');
+            }
+
+            function syncGrid(section) {
+                const ge = container.querySelector(`.grid-editor[data-id="${section.id}"]`);
+                if (!ge) return;
+                const lines = Array.from(ge.querySelectorAll('.zg-row')).map(row =>
+                    Array.from(row.querySelectorAll('.zg-cell')).map(c => c.value).join('')
+                );
+                section.content = lines.join('\n');
+                updateStats();
+                scheduleSave();
+            }
+
+            function rebuildRowCells(row, section) {
+                const line = +row.dataset.line;
+                const cfg = getCfg(section, line);
+                const lineStr = (section.content.split('\n')[line]) || '';
+                const chars = Array.from(lineStr);
+                const cnt = cfg.count > 0 ? cfg.count : Math.max(chars.length, 1);
+                row.querySelector('.zg-cells').innerHTML = buildCells(chars, cnt, cfg.count > 0 ? cfg.breaks : [], '');
+                const chip = row.querySelector('.zg-config-chip');
+                chip.innerHTML = describeChip(cfg);
+                chip.classList.toggle('fixed', cfg.count > 0);
+            }
+
+            function renumberCells(row) {
+                Array.from(row.querySelectorAll('.zg-cell')).forEach((c, i) => { c.dataset.pos = i; });
+            }
+
+            function addCellEl(row) {
+                const wrap = row.querySelector('.zg-cells');
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'zg-cell';
+                inp.dataset.pos = wrap.children.length;
+                wrap.appendChild(inp);
+                return inp;
+            }
+
+            function handleCellValue(cell) {
+                const ge = cell.closest('.grid-editor');
+                const section = sectionById(ge.dataset.id);
+                const row = cell.closest('.zg-row');
+                const pos = +cell.dataset.pos;
+                const cells = Array.from(row.querySelectorAll('.zg-cell'));
+                const cfg = getCfg(section, +row.dataset.line);
+                const fixed = cfg.count > 0;
+                const val = cell.value;
+                if (val.length > 1) {
+                    const chars = Array.from(val);
+                    let ci = pos;
+                    for (const ch of chars) {
+                        if (ci < cells.length) {
+                            cells[ci].value = ch;
+                            cells[ci].classList.add('has-val');
+                        } else if (!fixed) {
+                            const nc = addCellEl(row);
+                            cells.push(nc);
+                            nc.value = ch;
+                            nc.classList.add('has-val');
+                        }
+                        ci++;
+                    }
+                    cell.value = chars[0];
+                    const focusIdx = Math.min(ci, cells.length - 1);
+                    if (cells[focusIdx]) cells[focusIdx].focus();
+                } else {
+                    cell.classList.toggle('has-val', val.length > 0);
+                    if (val.length === 1) {
+                        const nx = cells[pos + 1];
+                        if (nx) nx.focus();
+                    }
+                }
+                renumberCells(row);
+                syncGrid(section);
+            }
+
+            function onGridInput(e) {
+                const cell = e.target;
+                if (!cell.classList || !cell.classList.contains('zg-cell')) return;
+                if (cell._composing) return;
+                if (cell._justComposed) { cell._justComposed = false; return; }
+                handleCellValue(cell);
+            }
+
+            function onGridKeydown(e) {
+                const cell = e.target;
+                if (!cell.classList || !cell.classList.contains('zg-cell')) return;
+                const ge = cell.closest('.grid-editor');
+                const section = sectionById(ge.dataset.id);
+                const row = cell.closest('.zg-row');
+                const cells = Array.from(row.querySelectorAll('.zg-cell'));
+                const pos = +cell.dataset.pos;
+                if (e.key === 'Backspace') {
+                    if (cell.value === '' && pos > 0) {
+                        e.preventDefault();
+                        const prev = cells[pos - 1];
+                        prev.focus();
+                        prev.value = '';
+                        prev.classList.remove('has-val');
+                        syncGrid(section);
+                    }
+                } else if (e.key === 'ArrowLeft' && cell.selectionStart === 0) {
+                    if (pos > 0) { e.preventDefault(); cells[pos - 1].focus(); }
+                } else if (e.key === 'ArrowRight' && cell.selectionEnd === cell.value.length) {
+                    if (pos < cells.length - 1) { e.preventDefault(); cells[pos + 1].focus(); }
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addGridLineAfter(cell);
+                }
+            }
+
+            function addGridLineAfter(cell) {
+                const ge = cell.closest('.grid-editor');
+                const section = sectionById(ge.dataset.id);
+                const row = cell.closest('.zg-row');
+                const line = +row.dataset.line;
+                const lines = section.content.split('\n');
+                lines.splice(line + 1, 0, '');
+                section.content = lines.join('\n');
+                if (section.grid && section.grid.lines) section.grid.lines.splice(line + 1, 0, { count: 0, breaks: [] });
+                renderSections();
+                const newGe = container.querySelector(`.grid-editor[data-id="${section.id}"]`);
+                if (newGe) {
+                    const rows = newGe.querySelectorAll('.zg-row');
+                    if (rows[line + 1]) {
+                        const c = rows[line + 1].querySelector('.zg-cell');
+                        if (c) c.focus();
+                    }
+                }
+                updateStats();
+                scheduleSave();
+            }
+
+            function deleteGridLine(id, line) {
+                const section = sectionById(id);
+                if (!section) return;
+                const lines = section.content.split('\n');
+                if (lines.length <= 1) lines[0] = '';
+                else lines.splice(line, 1);
+                section.content = lines.join('\n');
+                if (section.grid && section.grid.lines && section.grid.lines.length) section.grid.lines.splice(line, 1);
+                renderSections();
+                updateStats();
+                scheduleSave();
+                showToast('已删除此行');
+            }
+
+            function closePopover() {
+                const ex = document.querySelector('.zg-popover');
+                if (ex) ex.remove();
+                if (docClickClose) {
+                    document.removeEventListener('click', docClickClose, true);
+                    docClickClose = null;
+                }
+            }
+
+            function buildBreakStrip(cnt, breaks) {
+                let h = '';
+                for (let k = 0; k < cnt; k++) {
+                    h += `<div class="zg-bs-cell">${k + 1}</div>`;
+                    if (k < cnt - 1) {
+                        const on = breaks.includes(k + 1);
+                        h += `<div class="zg-bs-div${on ? ' on' : ''}" data-cut="${k + 1}" title="断句">${on ? '╱' : '│'}</div>`;
+                    }
+                }
+                return h;
+            }
+
+            function buildPreview(chars, cnt, breaks) {
+                let h = '';
+                for (let k = 0; k < cnt; k++) {
+                    const brk = breaks.includes(k);
+                    const ch = chars[k] !== undefined ? chars[k] : '';
+                    h += `<div class="pc${brk ? ' br' : ''}${ch ? '' : ' empty'}">${ch ? escapeAttr(ch) : '·'}</div>`;
+                }
+                return h;
+            }
+
+            function bindPopover(pop, section, line, chip, row) {
+                const lineStr = (section.content.split('\n')[line]) || '';
+                const chars = Array.from(lineStr);
+                const init = getCfg(section, line);
+                const draft = { count: init.count || 0, breaks: (init.breaks || []).slice() };
+                const valEl = pop.querySelector('.zg-pop-count .val');
+                const stripEl = pop.querySelector('.zg-break-strip');
+                const previewEl = pop.querySelector('.zg-pop-preview');
+                const freeBtn = pop.querySelector('.zg-pop-free');
+
+                function refresh() {
+                    const cnt = draft.count > 0 ? draft.count : Math.max(chars.length, 1);
+                    draft.breaks = draft.breaks.filter(b => b > 0 && b < cnt);
+                    valEl.textContent = cnt;
+                    freeBtn.classList.toggle('active', draft.count === 0);
+                    if (draft.count > 0) {
+                        stripEl.style.opacity = '1';
+                        stripEl.style.pointerEvents = 'auto';
+                        stripEl.innerHTML = buildBreakStrip(cnt, draft.breaks);
+                        previewEl.innerHTML = buildPreview(chars, cnt, draft.breaks);
+                    } else {
+                        stripEl.style.opacity = '0.55';
+                        stripEl.style.pointerEvents = 'none';
+                        stripEl.innerHTML = '<span style="color:var(--text-muted);font-size:11px;">设为固定字数后可断句</span>';
+                        previewEl.innerHTML = buildPreview(chars, cnt, []);
+                    }
+                }
+                function apply() {
+                    const g = ensureGrid(section);
+                    g.lines[line] = { count: draft.count > 0 ? draft.count : 0, breaks: draft.breaks.slice() };
+                    rebuildRowCells(row, section);
+                    syncGrid(section);
+                }
+                pop.querySelector('[data-act=dec]').addEventListener('click', e => {
+                    e.stopPropagation();
+                    const base = draft.count > 0 ? draft.count : Math.max(chars.length, 1);
+                    draft.count = Math.max(1, base - 1);
+                    refresh(); apply();
+                });
+                pop.querySelector('[data-act=inc]').addEventListener('click', e => {
+                    e.stopPropagation();
+                    const base = draft.count > 0 ? draft.count : Math.max(chars.length, 1);
+                    draft.count = Math.min(30, base + 1);
+                    refresh(); apply();
+                });
+                freeBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    draft.count = 0; draft.breaks = [];
+                    refresh(); apply();
+                });
+                stripEl.addEventListener('click', e => {
+                    const d = e.target.closest('.zg-bs-div');
+                    if (!d) return;
+                    e.stopPropagation();
+                    const cut = +d.dataset.cut;
+                    const i = draft.breaks.indexOf(cut);
+                    if (i >= 0) draft.breaks.splice(i, 1);
+                    else draft.breaks.push(cut);
+                    refresh(); apply();
+                });
+                pop.querySelector('.zg-pop-done').addEventListener('click', e => {
+                    e.stopPropagation();
+                    closePopover();
+                });
+                refresh();
+            }
+
+            function openChipPopover(chip) {
+                closePopover();
+                const id = chip.dataset.id;
+                const line = +chip.dataset.line;
+                const section = sectionById(id);
+                const row = chip.closest('.zg-row');
+                const pop = document.createElement('div');
+                pop.className = 'zg-popover';
+                pop.innerHTML = `
+                    <div class="zg-pop-title">字格设置 · 第 ${line + 1} 行</div>
+                    <div class="zg-pop-row zg-pop-count">
+                        <span>字数</span>
+                        <div class="stepper">
+                            <button data-act="dec" title="减少">-</button>
+                            <span class="val">0</span>
+                            <button data-act="inc" title="增加">+</button>
+                        </div>
+                        <button class="zg-pop-free">自由</button>
+                    </div>
+                    <div class="zg-pop-row">
+                        <span>断句</span>
+                        <div class="zg-break-strip"></div>
+                    </div>
+                    <div class="zg-pop-preview"></div>
+                    <button class="zg-pop-done">完成</button>
+                `;
+                row.appendChild(pop);
+                bindPopover(pop, section, line, chip, row);
+                setTimeout(() => {
+                    docClickClose = (ev) => {
+                        if (!ev.target.closest('.zg-popover') && !ev.target.closest('.zg-config-chip')) closePopover();
+                    };
+                    document.addEventListener('click', docClickClose, true);
+                }, 0);
+            }
+
+            function onGridClick(e) {
+                const chip = e.target.closest('.zg-config-chip');
+                if (chip) {
+                    e.stopPropagation();
+                    openChipPopover(chip);
+                    return;
+                }
+                const del = e.target.closest('.zg-row-del');
+                if (del) {
+                    e.stopPropagation();
+                    deleteGridLine(del.dataset.id, +del.dataset.line);
+                    return;
+                }
+                if (!e.target.closest('.zg-popover')) closePopover();
+            }
+
             function renderSections() {
+                closePopover();
                 if (!container) return;
                 const lockedAttr = collabSpectator ? ' disabled' : '';
 
@@ -3758,6 +4374,10 @@
                     const typeClass = getTypeClass(section.type);
                     const typeLabel = getTypeLabel(section.type);
                     const content = section.content || '';
+                    const gridOn = !!(section.grid && section.grid.enabled);
+                    const editorHtml = gridOn
+                        ? `<div class="grid-editor" data-id="${section.id}">${buildGridRows(section, lockedAttr)}</div>`
+                        : `<div class="section-textarea-wrapper"><textarea class="section-textarea" data-id="${section.id}" placeholder="输入歌词…"${lockedAttr}>${content}</textarea></div>`;
 
                     html += `
                         <div class="section-card type-${typeClass}" data-id="${section.id}">
@@ -3770,6 +4390,7 @@
                                     </select>
                                     <span class="section-type-label">${typeLabel}</span>
                                     <button class="btn btn-xs btn-copy" data-id="${section.id}" title="复制"${lockedAttr}>复制</button>
+                                    <button class="btn btn-xs btn-grid${gridOn ? ' active' : ''}" data-id="${section.id}" title="字格模式：每行字格 + 断句"${lockedAttr}>字格</button>
                                     <div class="toolbar-btn-group" style="display:inline-flex;gap:2px;">
                                         <button class="btn btn-xs btn-move-up" data-id="${section.id}" title="上移" ${index === 0 ? 'disabled' : ''}${lockedAttr}>↑</button>
                                         <button class="btn btn-xs btn-move-down" data-id="${section.id}" title="下移" ${index === state.sections.length - 1 ? 'disabled' : ''}${lockedAttr}>↓</button>
@@ -3779,9 +4400,7 @@
                                     <button class="btn btn-xs btn-danger-sm btn-delete" data-id="${section.id}" title="删除"${lockedAttr}>✕</button>
                                 </div>
                             </div>
-                            <div class="section-textarea-wrapper">
-                                <textarea class="section-textarea" data-id="${section.id}" placeholder="输入歌词…"${lockedAttr}>${content}</textarea>
-                            </div>
+                            ${editorHtml}
                         </div>
                     `;
                 });
@@ -3817,6 +4436,34 @@
                             updateStats();
                             scheduleSave();
                         }
+                    });
+                });
+
+                container.querySelectorAll('.grid-editor').forEach(ge => {
+                    ge.addEventListener('input', onGridInput);
+                    ge.addEventListener('keydown', onGridKeydown);
+                    ge.addEventListener('compositionstart', (e) => {
+                        if (e.target.classList && e.target.classList.contains('zg-cell')) e.target._composing = true;
+                    });
+                    ge.addEventListener('compositionend', (e) => {
+                        if (e.target.classList && e.target.classList.contains('zg-cell')) {
+                            e.target._composing = false;
+                            handleCellValue(e.target);
+                            e.target._justComposed = true;
+                        }
+                    });
+                    ge.addEventListener('click', onGridClick);
+                });
+
+                container.querySelectorAll('.btn-grid').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const section = state.sections.find(s => s.id === btn.dataset.id);
+                        if (!section) return;
+                        ensureGrid(section);
+                        section.grid.enabled = !section.grid.enabled;
+                        renderSections();
+                        updateStats();
+                        scheduleSave();
                     });
                 });
 
@@ -3917,6 +4564,7 @@
                     id: generateId(),
                     type: type,
                     content: content,
+                    grid: null,
                 });
                 renderSections();
                 updateStats();
